@@ -215,8 +215,8 @@ if any([PLX_creation{:,2}]) || TODO.WCFromBB
         if TODO.WCFromBB
             
             handles.threshold =get(handles.edit10,'String');
-            handles.par.StdThrMU = str2double(get(handles.edit11,'String'));
-            handles.par.StdThrSU = str2double(get(handles.edit20,'String'));
+            handles.par.StdThrSU = str2double(get(handles.edit11,'String'));
+            handles.par.StdThrMU = str2double(get(handles.edit20,'String'));
             handles.hp =get(handles.edit12,'String');
             handles.hpcutoff =str2double(get(handles.edit13,'String'));
             handles.lpcutoff =str2double(get(handles.edit14,'String'));

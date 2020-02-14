@@ -208,7 +208,7 @@ for ch=channels_to_process
             %         %%FOLDER MANAGEMENT!!   we should switch to main folder here...
             Extract_spikes4_cat_MU_SU(handles);
             
-            if strcmp(threshold_step,'low') %% load high threshold spikes file and remove the respective spikes
+            if strcmp(threshold_step,'MU') %% load SU threshold spikes file and remove the respective spikes
                 switch handles.threshold
                     case 'pos'
                         thresholds={'_pos'};
