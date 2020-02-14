@@ -53,13 +53,18 @@ for ii = 1:length(channels)
     ch=channels(ii);
     display(['Scanning "Channel' num2str(ch) '".'])                 % display what channel is processed at the movement
     
-    fileN=handles.wheretofindwhat{handles.block}{ch};
+    fileN=[handles.WC_concatenation_folder 'dataspikes_ch' sprintf('%03d',ch) '_' num2str(handles.wheretofindwhat{handles.block}{ch})];
+    
+    %     switch handles.threshold
+    %         case 'pos',     filenames={[fileN '_onethr.mat' ]};
+    %         case 'neg',     filenames={[fileN '_onethr.mat' ]};
+    %         case 'both',    filenames={[fileN '_negthr.mat' ],[fileN '_posthr.mat' ]};
+    %     end
     
     switch handles.threshold
-        case 'pos',     filenames={[handles.WC_concatenation_folder 'dataspikes_ch' sprintf('%03d',ch) '_' num2str(fileN) '_onethr.mat' ]};
-        case 'neg',     filenames={[handles.WC_concatenation_folder 'dataspikes_ch' sprintf('%03d',ch) '_' num2str(fileN) '_onethr.mat' ]};
-        case 'both',    filenames={[handles.WC_concatenation_folder 'dataspikes_ch' sprintf('%03d',ch) '_' num2str(fileN) '_negthr.mat' ],...
-                [handles.WC_concatenation_folder 'dataspikes_ch' sprintf('%03d',ch) '_' num2str(fileN) '_posthr.mat' ]};
+        case 'pos',     filenames={[fileN '_SU_pos.mat' ],[fileN '_MU_pos.mat' ]};
+        case 'neg',     filenames={[fileN '_SU_neg.mat' ],[fileN '_MU_neg.mat' ]};
+        case 'both',    filenames={[fileN '_SU_neg.mat' ],[fileN '_MU_neg.mat' ],[fileN '_SU_pos.mat' ],[fileN '_MU_pos.mat' ]};
     end
     
     spkt=SPK.spiketimes;
@@ -86,7 +91,7 @@ for ii = 1:length(channels)
         if ~isempty(cluster_class)
             
             
-        sortid=[sortid; int8(cluster_class(:,1))+maxsortid];
+            sortid=[sortid; int8(cluster_class(:,1))+maxsortid];
         end
         SPK.sortID=sortid;
         
@@ -100,7 +105,7 @@ for ii = 1:length(channels)
         SPK.waveforms=wf;
         
         if ~isempty(cluster_class)
-        maxsortid=max(cluster_class(:,1))+1; %% works, because only maximum two iterations...
+            maxsortid=max(cluster_class(:,1))+1; %% works, because only maximum two iterations...
         end
     end
 end

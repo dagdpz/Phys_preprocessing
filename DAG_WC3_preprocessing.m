@@ -56,9 +56,12 @@ handles.par.w_post = 22;
 handles.par.ref = 0.001;
 handles.par.int_factor = 2;
 handles.par.interpolation ='y';
-handles.par.stdmin = 3;%5 spike threshold in std's (based on median)
 handles.par.stdmax = 100;%100;
 handles.threshold ='neg';
+
+
+handles.par.StdThrMU = 3;%5 spike threshold in std's (based on median)
+handles.par.StdThrSU = 5;%5 spike threshold in std's (based on median)
 
 % other
 handles.cell_tracking_distance_limit=50; 
@@ -184,6 +187,8 @@ for ch=channels_to_process
     for f=1:numel(blocks_to_process)
         handles.current_blocks=blocks_to_process{f};
         handles.current_channel_file = f;
+        
+        channelfile=[sprintf('%03d',handles.current_channel) '_' num2str(handles.current_channel_file)];
         %% correct state onsets...
         blockstart_samples=0;
         handles.task_times=[];
@@ -197,12 +202,41 @@ for ch=channels_to_process
             blockstart_samples=blockend_samples+1;
         end
         
-        %         %%FOLDER MANAGEMENT!!   we should switch to main folder here...
-        Extract_spikes4_concatenated(handles);
-        cd(handles.WC_concatenation_folder) %-.-
-        Do_clustering4_redo_concatenated(handles); % this one does the actual clustering. There is no way to do it in waveclus itself...
+        for threshold_step={'SU','MU'}
+            handles.current_threshold_step=threshold_step{:};
+            handles.par.stdmin = handles.par.(['StdThr' handles.current_threshold_step]);
+            %         %%FOLDER MANAGEMENT!!   we should switch to main folder here...
+            Extract_spikes4_cat_MU_SU(handles);
+            
+            if strcmp(threshold_step,'low') %% load high threshold spikes file and remove the respective spikes
+                switch handles.threshold
+                    case 'pos'
+                        thresholds={'_pos'};
+                    case 'neg'
+                        thresholds={'_neg'};
+                    case 'both'
+                        thresholds={'_neg','_pos'};
+                end
+                for k=1:numel(thresholds)
+                    filename_MU=[handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_MU' thresholds{k} '.mat'];
+                    filename_SU=[handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_SU' thresholds{k} '.mat'];
+                    load(filename_SU);
+                    index_SU=index;
+                    load(filename_MU);
+                    
+                    to_keep=~ismember(index,index_SU);
+                    index=index(to_keep);
+                    spikes=spikes(to_keep,:);
+                    cluster_class=cluster_class(to_keep,:);                    
+                    save(filename_MU,'spikes','index','thr','par','cluster_class')
+                end
+            end
+            
+            cd(handles.WC_concatenation_folder) %-.-
+            Do_clustering4_redo_cat_MU_SU(handles); % this one does the actual clustering. There is no way to do it in waveclus itself...
+            cd(current_path)
+        end
         
-        cd(current_path)
     end
     
     %% need to document what to find where
