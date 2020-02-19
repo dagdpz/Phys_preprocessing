@@ -15,6 +15,8 @@ settings.LFP_LP_bw_filter= 150;
 settings.LFP_LP_median_filter= 250;
 
 %% crate folders
+plxfilefolder                   = [data_path 'TDTtanks' filesep monkey filesep dates filesep];
+TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep dates filesep block];
 mainraw_folder                  = strcat([data_path monkey '_mat_from_TDT']);
 temp_raw_folder                 = strcat([mainraw_folder filesep dates]);
 if exist(mainraw_folder,'dir')~=7
@@ -32,22 +34,37 @@ DISREGARDLFP=0;
 for i = 1:2:length(varargin)
     eval([upper(varargin{i}) '=varargin{i+1};']);
 end
-data             =TDTbin2mat_working([data_path 'TDTtanks' filesep monkey filesep dates filesep block], varargin{:});
+
+%% read in info only first, so we can load channel by channel (of broadband/LFP) later on
+
+datainfo             =TDTbin2mat_working(TDTblockfolder, varargin{:}, 'HEADERS',1);
+
+varargin_no_broadband=varargin;
+
+for i = 1:2:length(varargin_no_broadband)
+    if strcmpi(varargin{i},'DONTREAD')
+        varargin_no_broadband{i+1}=[varargin_no_broadband{i+1}, 'BROA','Broa'];
+        varargin_no_broadband{i+1}=unique(varargin_no_broadband{i+1});
+    end
+end
+
+
+data             =TDTbin2mat_working(TDTblockfolder, varargin_no_broadband{:});
 clc;
 Block_N=block(strfind(block,'-')+1:end);
 %% overwriting snippets with plx file (in case it exists and waveclus option was selected)
 % not entirely clean, but we want to keep the format we already have
 if strcmp(PLXVERSION,'Snippets')
-    plxfile=[data_path 'TDTtanks' filesep monkey filesep dates filesep dates  '_blocks_' Block_N '-01.plx'];
+    plxfile=[plxfilefolder dates  '_blocks_' Block_N '-01.plx'];
 else
-    plxfile=[data_path 'TDTtanks' filesep monkey filesep dates filesep dates '_' PLXVERSION '_blocks_' Block_N '-01.plx'];
+    plxfile=[plxfilefolder dates '_' PLXVERSION '_blocks_' Block_N '-01.plx'];
 end
 if exist(plxfile,'file')
     SPK=PLX2SPK(plxfile);            % convert the sorted plexon file into spkobj-format; merge the new sorted waveforms with the old SPKOBJ to geht thresholds and noiselevels as well.
     %backscaling (see DAG_create_PLX)
-    if strcmp(PLXVERSION,'from_BB') 
-    load([data_path 'TDTtanks' filesep monkey filesep dates filesep 'WC' filesep 'concatenation_info'],'wf_scale');
-    scaleperchannel=wf_scale(str2double(Block_N),:);
+    if strcmp(PLXVERSION,'from_BB')
+        load([plxfilefolder 'WC' filesep 'concatenation_info'],'wf_scale');
+        scaleperchannel=wf_scale(str2double(Block_N),:);
         for chan=unique(SPK.channelID)'
             idx=SPK.channelID==chan;
             SPK.waveforms(idx,:)=SPK.waveforms(idx,:)*scaleperchannel(chan);
@@ -64,8 +81,8 @@ elseif strcmp(PLXVERSION,'none')
     disp('No sorting used');
     % MP try to avoid error when only D/A input
     if isstruct(data.snips) % just remove this line and the end (63) to remove thr MP try
-    snipfield=fieldnames(data.snips);
-    data.snips.(snipfield{1}).sortcode  =zeros(size(data.snips.(snipfield{1}).sortcode ));
+        snipfield=fieldnames(data.snips);
+        data.snips.(snipfield{1}).sortcode  =zeros(size(data.snips.(snipfield{1}).sortcode ));
     end
 else
     disp('Plexsormanually snippets used');
@@ -77,18 +94,10 @@ stopper_end_trial   =253; % end of sending trial number information
 stopper_no_change   =254; % stopper between each data during tr
 stopper_INI_states  =255; % start of sending states
 stopper_control     =0;   % before sending states, to control if digital connections are working
-%
-% trials_start_mark       = [false diff(data.streams.stat.data==stopper_INI_trial)==1];
-% find_stopper_INI_trial  = [find(trials_start_mark) numel(trials_start_mark)+1];
-% trials_end_mark         = [diff(data.streams.stat.data==stopper_INI_states)==-1 false];
-% find_stopper_END_trial  = [find(trials_end_mark) numel(trials_end_mark)];
-
 
 %% Extracting Session, Run, Trial, and time oínformation
 % Either from stat header or from epocs
-%for counter=1:1
 if stream_state_info
-    
     trials_start_mark       = [false diff(data.streams.stat.data==stopper_INI_trial)==1];
     find_stopper_INI_trial  = [find(trials_start_mark) numel(trials_start_mark)+1];
     trials_end_mark         = [diff(data.streams.stat.data==stopper_INI_states)==-1 false];
@@ -108,8 +117,6 @@ if stream_state_info
         Trials(t)       =DateRunTrial(8)*10 + DateRunTrial(9);
     end
     
-    
-    
     %% replace stat stream trial information with state 50 (ITI)
     % NOT 1, because we start the trial AFTER trial information is sent
     samples_to_replace      = [];
@@ -117,7 +124,6 @@ if stream_state_info
         samples_to_replace=[samples_to_replace find_stopper_INI_trial(s):find_stopper_END_trial(s)];
     end
     data.streams.stat.data(samples_to_replace)=single(50);
-    
     
 else
     if ~isfield(data.epocs,'Tnum')
@@ -161,29 +167,21 @@ else
     end
 end
 
-
-%% check what kind of data is available => why should this ever be empty?
-%
-% stream_fieldnames={};epoc_fieldnames={};snippet_fieldnames={};scalar_fieldnames={};
-% if ~isempty (data.streams);     stream_fieldnames=fieldnames(data.streams);end
-% if ~isempty (data.epocs);       epoc_fieldnames=fieldnames(data.epocs);end
-% if ~isempty (data.snips);       snippet_fieldnames=fieldnames(data.snips);end
-% if ~isempty (data.scalars);     scalar_fieldnames=fieldnames(data.scalars);end
-
 %% Snippet selection
 if isstruct(data.snips)
-snippet_fieldnames=fieldnames(data.snips);
-snip_index=ismember(snippet_fieldnames,{'eNeu'});
+    snippet_fieldnames=fieldnames(data.snips);
+    snip_index=ismember(snippet_fieldnames,{'eNeu'});
 else
-snip_index=[];
+    snip_index=[];
 end
+
 %% Stream Selections (for LFP)
-stream_fieldnames=fieldnames(data.streams);
+stream_fieldnames=fieldnames(datainfo.stores);
 BB_index=ismember(stream_fieldnames,{'BROA','Broa'});
 LFP_index=ismember(stream_fieldnames,{'LFPx'});
 settings.LFP_from='Broa';
 % don't consider broadband if its sampling rate is below 5000 Hz
-if ~any(BB_index) || data.streams.(stream_fieldnames{BB_index}).fs<5000
+if ~any(BB_index) || datainfo.stores.(stream_fieldnames{BB_index}).fs<5000
     stream_fieldnames(BB_index)=[];
     BB_index=false(size(stream_fieldnames));
     settings.LFP_from='LFPx';
@@ -192,38 +190,43 @@ end
 %% load excel lag table if applicable
 DBpath=getDropboxPath;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
-
 lag_table_string={'Session','Block','lag_seconds'};
 lag_table_num=zeros(size(lag_table_string));
-if exist([DBfolder filesep monkey '_LFP_BROA_comp.xls'],'file')    
-[lag_table_num,lag_table_string]=xlsread([DBfolder filesep monkey '_LFP_BROA_comp.xls']);
+if exist([DBfolder filesep monkey '_LFP_BROA_comp.xls'],'file')
+    [lag_table_num,lag_table_string]=xlsread([DBfolder filesep monkey '_LFP_BROA_comp.xls']);
 end
 
-% use Broadband for LFP if available
+%% use Broadband for LFP if available
 if any(BB_index)
     BB=stream_fieldnames{BB_index};
     stream_fieldnames{BB_index}='LFPx';
     stream_fieldnames(LFP_index)=[];
+    varargin_per_channel={'SORTNAME',SORTNAME,'DISREGARDLFP',DISREGARDLFP,'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'EXCLUSIVELYREAD',{BB}};
+    
     %% create LFP based on filtering broadband
-    samplingrate=data.streams.(BB).fs;              %Hz ?
+    samplingrate=datainfo.stores.(BB).fs;           % Hz ?
     SR_factor=round(samplingrate/1010);             % LFP sampling rate should be exactly 1/24th of boradband
     data.streams.LFPx.fs=samplingrate/SR_factor;
     
-    %% correct for lag here
+    %% get lag for current block
     lag=ph_readout_broadband_lag(lag_table_num,lag_table_string,str2double(dates),Block_N);
     lag_in_samples=round(lag*samplingrate);
-     if lag_in_samples>0
-       data.streams.(BB).data(:,1:lag_in_samples)=[];
-     else
-       data.streams.(BB).data=[zeros(size(data.streams.(BB).data,1),abs(lag_in_samples)) data.streams.(BB).data];         
-     end
-     
-    for channel=1: size(data.streams.(BB).data,1)
+    
+    for channel=unique(datainfo.stores.(BB).chan)
+        chandata=TDTbin2mat_working(TDTblockfolder, varargin_per_channel{:},'CHANNEL',channel);
+        chandata=chandata.streams.(BB).data;
+        %% correct for lag here
+        if lag_in_samples>0
+            chandata(1:lag_in_samples)=[];
+        else
+            chandata=[zeros(1,abs(lag_in_samples)) chandata];
+        end
         %% filter BB to LFP
-        data.streams.LFPx.data(channel,:)=filter_function(data.streams.(BB).data(channel,:),samplingrate,SR_factor,size(data.streams.LFPx.data,2),settings);
+        data.streams.LFPx.data(channel,:)=filter_function(chandata,samplingrate,SR_factor,size(data.streams.LFPx.data,2),settings);
     end
+    clear chandata
 elseif any(LFP_index)
-    samplingrate=data.streams.LFPx.fs;  
+    samplingrate=data.streams.LFPx.fs;
     for channel=1: size(data.streams.LFPx.data,1)
         %% filter LFP 1000 Hz
         data.streams.LFPx.data(channel,:)=filter_function_simple(data.streams.LFPx.data(channel,:),samplingrate,settings);
@@ -231,6 +234,8 @@ elseif any(LFP_index)
 end
 
 %% separate each trial
+
+stream_fieldnames=fieldnames(data.streams);
 unique_runs=unique(Runs);           % important to separate Blocks with several runs
 tr_block=0;                         % trial index in the block
 tr_processed=0;                     % accumulator for keeping track of previous trials in this block
@@ -256,19 +261,6 @@ for r=1:numel(unique_runs)          % looping through runs
             % finding time of target acquisition in this state
             FIX_ACQ_start_time              =find(TDT_DATA.Trial(tr).purestates==2)./data.streams.stat.fs;
             FIX_ACQ_start_time              =FIX_ACQ_start_time(1);
-            
-            
-            %             trial_samples_for_state=[find_stopper_INI_trial(tr_block): find_stopper_INI_trial(tr_block+1)-1];
-            %             trial_time=[trial_samples_for_state(1) trial_samples_for_state(end)]./data.streams.stat.fs;
-            %             TDT_DATA.Trial(tr).completestates= data.streams.stat.data(trial_samples_for_state);
-            %
-            %             % removing header data from states
-            %             TDT_DATA.Trial(tr).purestates= TDT_DATA.Trial(tr).completestates;
-            %             TDT_DATA.Trial(tr).purestates(ismember(trial_samples_for_state,find_stopper_INI_trial(tr_block):find_stopper_END_trial(tr_block)))= 1;
-            %             % finding time of target acquisition in this state
-            %             FIX_ACQ_start_time          =find(TDT_DATA.Trial(tr).purestates==2)./data.streams.stat.fs;
-            %             FIX_ACQ_start_time          =FIX_ACQ_start_time(1);
-            
         else
             trial_time                  =[trialonsets(tr_block) trialonsets(tr_block+1)];
             trial_states_indexes        =data.epocs.SVal.onset>=trial_time(1) & data.epocs.SVal.onset<=trial_time(2);
@@ -284,19 +276,20 @@ for r=1:numel(unique_runs)          % looping through runs
         end
         
         %% Streams
-        for current_fieldname=1:numel(stream_fieldnames)
-            samplingrate=data.streams.(stream_fieldnames{current_fieldname}).fs;
+        for current_field=1:numel(stream_fieldnames)
+            current_fieldname=stream_fieldnames{current_field};
+            samplingrate=data.streams.(current_fieldname).fs;
             start_end_samples=round(trial_time*samplingrate);
-            end_sample=min([start_end_samples(end)-1, size(data.streams.(stream_fieldnames{current_fieldname}).data,2)]);
-            for channel=1: size(data.streams.(stream_fieldnames{current_fieldname}).data,1)
-                TDT_DATA.Trial(tr).(stream_fieldnames{current_fieldname})(channel,:)=data.streams.(stream_fieldnames{current_fieldname}).data(channel,start_end_samples(1):end_sample);
+            end_sample=min([start_end_samples(end)-1, size(data.streams.(current_fieldname).data,2)]);
+            for channel=1: size(data.streams.(current_fieldname).data,1)
+                TDT_DATA.Trial(tr).(current_fieldname)(channel,:)=data.streams.(current_fieldname).data(channel,start_end_samples(1):end_sample);
             end
             % cutting off INI trial and create new structure to append to
             % previous trial ... WHAT HAPPENS IF TRIAL IS CORRUPTED (Invalid)???
             samples_to_skip=round((FIX_ACQ_start_time-(start_end_samples(1)/samplingrate-trial_time(1)))*samplingrate);
-            DATA_TO_APPEND.Trial(tr).(stream_fieldnames{current_fieldname})=TDT_DATA.Trial(tr).(stream_fieldnames{current_fieldname})(:,1:samples_to_skip);
-            TDT_DATA.Trial(tr).(stream_fieldnames{current_fieldname})(:,1:samples_to_skip)=[];
-            TDT_DATA.Trial(tr).([stream_fieldnames{current_fieldname} '_samplingrate'])=samplingrate;
+            DATA_TO_APPEND.Trial(tr).(current_fieldname)=TDT_DATA.Trial(tr).(current_fieldname)(:,1:samples_to_skip);
+            TDT_DATA.Trial(tr).(current_fieldname)(:,1:samples_to_skip)=[];
+            TDT_DATA.Trial(tr).([current_fieldname '_samplingrate'])=samplingrate;
         end
         
         %% snippets
@@ -320,49 +313,11 @@ for r=1:numel(unique_runs)          % looping through runs
                 end
             end
         end
-        
-        %         for FN=1:numel(snippet_fieldnames)
-        %             trial_snippet_indexes=[data.snips.(snippet_fieldnames{FN}).ts>=trial_time(1) & data.snips.(snippet_fieldnames{FN}).ts<=trial_time(2)];
-        %             unique_channels=unique(data.snips.(snippet_fieldnames{FN}).chan);
-        %             for chan=unique_channels'
-        %                 channel_idx=data.snips.(snippet_fieldnames{FN}).chan==chan;
-        %                 unique_sortcodes=unique([data.snips.(snippet_fieldnames{FN}).sortcode]);
-        %                 for sortcode=1:numel(unique_sortcodes)
-        %                     sortcodeidx=data.snips.(snippet_fieldnames{FN}).sortcode==unique_sortcodes(sortcode);
-        %                     if unique_sortcodes(sortcode)==0 %% drop unsorted spikes
-        %                         TDT_DATA.Trial(tr).([snippet_fieldnames{FN} '_t']){chan,sortcode}=[];
-        %                         TDT_DATA.Trial(tr).([snippet_fieldnames{FN} '_w']){chan,sortcode}=[];
-        %                     else
-        %                         TDT_DATA.Trial(tr).([snippet_fieldnames{FN} '_t']){chan,sortcode-any(unique_sortcodes==0)}=...
-        %                             [data.snips.(snippet_fieldnames{FN}).ts(trial_snippet_indexes & channel_idx & sortcodeidx)-trial_time(1)-FIX_ACQ_start_time];
-        %                         TDT_DATA.Trial(tr).([snippet_fieldnames{FN} '_w']){chan,sortcode-any(unique_sortcodes==0)}=...
-        %                             [data.snips.(snippet_fieldnames{FN}).data(trial_snippet_indexes & channel_idx & sortcodeidx,:)];
-        %                     end
-        %                 end
-        %             end
-        %         end
-        
-        
-        %% save date , run, trials, session, block
-        %         if stream_state_info
-        %             trial_samples_for_state         = find_stopper_INI_trial(tr_block):find_stopper_END_trial(tr_block);
-        %             DateRunTrial_states             = data.streams.stat.data(trial_samples_for_state);
-        %             DateRunTrial                    = DateRunTrial_states([false diff(DateRunTrial_states==stopper_no_change)==-1]);
-        %             % date or session
-        %             TDT_DATA.Trial(tr).session    = 20000000 + DateRunTrial(1)*10000 + DateRunTrial(2)*100 + DateRunTrial(3);
-        %             TDT_DATA.Trial(tr).time       = DateRunTrial(4:6);
-        %             TDT_DATA.Trial(tr).run        = DateRunTrial(7);
-        %             TDT_DATA.Trial(tr).trial      = DateRunTrial(8)*10 + DateRunTrial(9);
-        %             TDT_DATA.Trial(tr).block      = sprintf('%02d',str2double(block(7:end)));
-        %         else
         TDT_DATA.Trial(tr).time       = [Hour(tr_block) Minute(tr_block) Second(tr_block)];
         TDT_DATA.Trial(tr).run        = Runs(tr_block);
         TDT_DATA.Trial(tr).session    = 20000000+Session(tr_block);
         TDT_DATA.Trial(tr).trial      = tr;
         TDT_DATA.Trial(tr).block      = sprintf('%02d',str2double(block(7:end)));
-        %        end
-        
-        
     end
     
     tr_processed=tr_processed+numel(runtrials);
@@ -385,15 +340,11 @@ for r=1:numel(unique_runs)          % looping through runs
     
     %% In case we were using stream_state_info, we have to separate runs, and assign trial numbers at this stage
     %% Actually not, should work as it is now... DOUBLECHECK!
-    %for idx_run=1: max(unique([TDT_DATA.Trial.run]))
-    %for idx_run=unique([TDT_DATA.Trial.run])
     run=unique([TDT_DATA.Trial.run]);
-    clear TDT_trial TDT_trial_temp 
+    clear TDT_trial TDT_trial_temp
     for tr=runtrials
         %% here exclude the ones that didnt have fix_acq....!!!
-        %if ~isempty(TDT_DATA.Trial(tr).run) && TDT_DATA.Trial(tr).run==idx_run
         TDT_trial_temp(TDT_DATA.Trial(tr).trial) = TDT_DATA.Trial(tr); % This is temp, because we potentially overwrite the file we load!!!
-        %end
     end
     First_trial_INI_temp=First_trial_INI;
     
@@ -414,7 +365,6 @@ for r=1:numel(unique_runs)          % looping through runs
             end
             
         elseif isfield(TDT_trial_temp,'LFPx') && ~isfield(TDT_trial,'LFPx')
-            
             for vt=Validtrials % really, a loop is needed for this?
                 TDT_trial(vt).LFPx=TDT_trial_temp(vt).LFPx;
                 TDT_trial(vt).LFPx_samplingrate=TDT_trial_temp(vt).LFPx_samplingrate;
@@ -427,7 +377,6 @@ for r=1:numel(unique_runs)          % looping through runs
     First_trial_INI=First_trial_INI_temp;
     save(filename,'TDT_trial','First_trial_INI')
     save([mainraw_folder filesep dates '_settings'],'settings');
-    %end
 end
 end
 
@@ -453,15 +402,11 @@ datafilt = DAG_median_filter(datafilt,n);
 % duplicate first 12 samples => in the resampling step the nanmean corresponds to that time point
 % also, cut off last 12 samples (to have the same length in the as in the input)
 datafilt=[datafilt(1:round(SR_factor/2)) datafilt(1:end-round(SR_factor/2))];
-% duplicate first 12 samples => in the resampling step the nanmean corresponds to that time point
-% datafilt=[datafilt(1:round(SR_factor/2)) datafilt];
-
-RR=N_samples_original*SR_factor-numel(datafilt);
 
 %% How does it work in TDT to assign LFP samples... Can't get to the same amount (+/- 1 sample)?
 % Problem occurs, when numel(datafilt)/SR_factor<=N_samples_original
 % Try without cutting off last 12 samples first ?
-
+RR=N_samples_original*SR_factor-numel(datafilt);
 if abs(RR)>50000
     disp(['LFP and Boradband time do not match! t(LFP-Broa)=~ ' num2str(round(RR/24000)) 's']);
 end
@@ -474,40 +419,11 @@ else
     datafilt(end+1:end+RR)=datafilt(end-RR+1:end);
 end
 
-% R=mod(numel(datafilt),SR_factor);
-% if numel(datafilt)/SR_factor>N_samples_original %&& R<SR_factor/2
-%     %remove last few samples so the total number divided by SR_factor is integer
-%     datafilt(end-R+1:end)=[];%
-% elseif numel(datafilt)/SR_factor<=N_samples_original %&& R>=SR_factor/2
-%     datafilt(end+1:end+SR_factor-R)=datafilt(end-SR_factor+R+1:end);
-% else
-%     %  error('LFP sample amount problem');
-% end
 %take nanmean of every 24 samples
 Output_stream=nanmean(reshape(datafilt,SR_factor,numel(datafilt)/SR_factor),1);
 end
 
 function  Output_stream=filter_function_simple(Input_stream,samplingrate,settings)
-% %bandstop filter 50 Hz
-% filter_frq= [49.9 50.1];
-% [b,a]=butter(2,filter_frq*2/samplingrate,'stop');
-% datafilt=  filtfilt(b,a, double(Input_stream));
-% 
-% %bandstop filter 50 Hz
-% filter_frq= [99.9 100.1];
-% [b,a]=butter(2,filter_frq*2/samplingrate,'stop');
-% datafilt=  filtfilt(b,a, double(datafilt));
-% 
-% % highpass
-% filter_frq= 1;
-% [b,a]=butter(4, filter_frq*2/samplingrate, 'high'); % 'low', 'high
-% datafilt=  filtfilt(b,a, datafilt);
-% 
-% % lowpass
-% filter_frq= 150;
-% [b,a]=butter(4, filter_frq*2/samplingrate, 'low'); % 'low', 'high
-% Output_stream=  filtfilt(b,a, datafilt);
-
 %bandstop filter 50 Hz
 [b,a]=butter(2,settings.LFP_notch_filter1*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(Input_stream));
@@ -523,5 +439,4 @@ datafilt=  filtfilt(b,a, datafilt);
 % lowpass
 [b,a]=butter(4, settings.LFP_LP_bw_filter*2/samplingrate, 'low'); % 'low', 'high
 Output_stream=  filtfilt(b,a, datafilt);
-
 end
