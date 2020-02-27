@@ -1,6 +1,6 @@
 function phys_gui_working(varargin)
 
-% Last Modified by GUIDE v2.5 13-Feb-2020 12:55:55
+% Last Modified by GUIDE v2.5 27-Feb-2020 11:08:30
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -39,9 +39,15 @@ set(handles.checkbox3,'Value',0);
 set(handles.checkbox4,'Value',0);
 set(handles.checkbox5,'Value',0);
 set(handles.checkbox6,'Value',0);
-set(handles.checkbox11,'Value',0);
-set(handles.checkbox12,'Value',0);
-set(handles.checkbox13,'Value',0);
+set(handles.checkbox7,'Value',0);
+set(handles.checkbox8,'Value',0);
+set(handles.checkbox9,'Value',0);
+set(handles.checkbox91,'Value',0);
+set(handles.checkbox92,'Value',0);
+set(handles.checkbox10,'Value',0);
+set(handles.checkbox101,'Value',0);
+set(handles.checkbox102,'Value',0);
+set(handles.checkbox103,'Value',0);
 
 function Physio_GUI_V_Blumenkohl_Raspberry_CreateFcn(hObject, eventdata, handles)
 ha = axes('units','normalized', ...
@@ -71,7 +77,7 @@ if ischar(handles.fout)
     for i=1:numel(temp.date)
         if isempty(temp.block)
             %             tank_path_pre = [temp.drive ':' filesep 'Data' filesep 'TDTtanks' filesep temp.monkey filesep num2str(temp.date(i)) filesep temp.block];
-            tank_path_pre = [handles.drive 'Data' filesep [handles.monkey '_combined_monkeypsych_TDT'] filesep num2str(temp.date(i)) filesep];
+            tank_path_pre = [handles.drive 'Data' filesep [handles.monkey_phys '_combined_monkeypsych_TDT'] filesep num2str(temp.date(i)) filesep];
             temp.block = [];
             combined_dir=dir(tank_path_pre);
             jj=1;
@@ -83,7 +89,7 @@ if ischar(handles.fout)
             end
         else
             %             tank_path_pre = [temp.drive ':' filesep 'Data' filesep 'TDTtanks' filesep temp.monkey filesep num2str(temp.date(i)) filesep ];
-            tank_path_pre = [handles.drive 'Data' filesep [handles.monkey '_combined_monkeypsych_TDT'] filesep num2str(temp.date(i)) filesep];
+            tank_path_pre = [handles.drive 'Data' filesep [handles.monkey_phys '_combined_monkeypsych_TDT'] filesep num2str(temp.date(i)) filesep];
             combined_dir=dir(tank_path_pre);
             jj=1;
             for j=1:size(combined_dir,1)
@@ -109,7 +115,7 @@ if ischar(handles.fout)
     
     %% writing to m-file
     filesep_idx=strfind(handles.fout,filesep);
-    mon=handles.monkey(1:strfind(handles.monkey,'_')-1);
+    mon=handles.monkey;
     
     fid = fopen([handles.fout(1:filesep_idx(end)) 'ph_additional_settings.m'],'w');
     fprintf(fid,['keys.' mon '.filelist_formatted={... \n']);
@@ -133,7 +139,7 @@ pause(.01)  % FLUSH the event queue, drawnow would work too.
 % temp_date=sort(temp_date);
 % temp_block=get(handles.listbox2,'String');
 
-%if get(handles.checkbox11,'Value')
+%if get(handles.checkbox101,'Value')
 ph_initiation(handles.project,{handles.version},1);
 %end
 
@@ -147,7 +153,7 @@ pause(.01)  % FLUSH the event queue, drawnow would work too.
 temp_date=get(handles.listbox1,'String');
 temp_date= str2num(cell2mat(temp_date));
 temp_date=sort(temp_date);
-temp_block=num2cell(get(handles.listbox2,'String'));
+%temp_block=num2cell(get(handles.listbox2,'String'));
 
 %% transform checkbox tags to fieldnames
 handle_fn=fieldnames(handles);
@@ -167,13 +173,13 @@ for ck=1:numel(PLX_creation_fn)
 end
 
 %% TODO
-if TODO.RenameSynapseTankNameToOldTankFormat
+if TODO.SynapseTankToOldFormat
     if numel(temp_date)>1
         temp_date_range = [min(temp_date) max(temp_date)];
     else
         temp_date_range = temp_date;
     end
-    temp_date = DAG_rename_TDT_tank(handles.drive,handles.monkey,temp_date_range);
+    temp_date = DAG_rename_TDT_tank(handles.drive,handles.monkey_phys,temp_date_range);
 end
 
 
@@ -185,9 +191,9 @@ if any([PLX_creation{:,2}]) || TODO.WCFromBB
     tank_path = [handles.drive];
     for i=1:numel(temp_date)
         clear tank_b_names
-        if isempty(temp_block)
+%         if isempty(temp_block)
             temp_block = [];
-            tank_path_pre = [handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey filesep num2str(temp_date(i)) filesep temp_block];
+            tank_path_pre = [handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey_phys filesep num2str(temp_date(i)) filesep temp_block];
             tank_dir=dir(tank_path_pre);
             jj=1;
             for j=1:size(tank_dir,1)
@@ -196,21 +202,21 @@ if any([PLX_creation{:,2}]) || TODO.WCFromBB
                     jj=jj+1;
                 end
             end
-        else
-            
-            tank_path_pre = [handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey filesep num2str(temp_date(i)) filesep ];
-            tank_dir=dir(tank_path_pre);
-            jj=1;
-            for j=1:size(tank_dir,1)
-                for hh=1:size(temp_block,1)
-                    if ~isempty(temp_block{hh}) & findstr(tank_dir(j).name, ['Block-' num2str(temp_block{hh})]) == 1
-                        tank_b_names{:,jj}=tank_dir(j).name;
-                        jj=jj+1;
-                    end
-                end
-            end
-            
-        end
+% %         else
+%             
+%             tank_path_pre = [handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey_phys filesep num2str(temp_date(i)) filesep ];
+%             tank_dir=dir(tank_path_pre);
+%             jj=1;
+%             for j=1:size(tank_dir,1)
+%                 for hh=1:size(temp_block,1)
+%                     if ~isempty(temp_block{hh}) && findstr(tank_dir(j).name, ['Block-' num2str(temp_block{hh})]) == 1
+%                         tank_b_names{:,jj}=tank_dir(j).name;
+%                         jj=jj+1;
+%                     end
+%                 end
+%             end
+%             
+%         %end
         
         if TODO.WCFromBB
             
@@ -229,7 +235,7 @@ if any([PLX_creation{:,2}]) || TODO.WCFromBB
         
         PLX_versions_to_create=find([PLX_creation{:,2}]);
         for v=PLX_versions_to_create
-            DAG_create_PLX(temp_date(i),handles.monkey,tank_b_names,PLX_creation{v,1})
+            DAG_create_PLX(temp_date(i),handles.monkey_phys,tank_b_names,PLX_creation{v,1})
         end
     end
 end
@@ -238,7 +244,7 @@ end
 if TODO.Assign_WC_waveforms_to_PLX
     % Kind of complicated scripting for just looping through all selected
     % sessions/blocks, but this is only temporary anyway
-    TDT_prefolder_dir           = [handles.drive 'Data\' 'TDTtanks' filesep handles.monkey];
+    TDT_prefolder_dir           = [handles.drive 'Data' filesep 'Sortcodes' filesep handles.monkey_phys];
     
     dir_folder_with_session_days=dir(TDT_prefolder_dir); % dir
     session_folders=[];
@@ -272,7 +278,14 @@ if TODO.Assign_WC_waveforms_to_PLX
 end
 
 
+if  TODO.UpdateSortcodeExcel % Combine
+    options.preferred_SortType=get(get(handles.uipanel10,'SelectedObject'),'String');
+    options.preferred_Plx_file_extension=get(get(handles.uipanel11,'SelectedObject'),'String');
+    DAG_update_plx_file_table(handles.monkey_phys,temp_date,options)
+end
+
 if  TODO.CombineTDTandMP % Combine
+    temp_block=[];
     if isempty(temp_block)
         temp_block=[];
     else
@@ -283,8 +296,8 @@ if  TODO.CombineTDTandMP % Combine
     %     else
     %         temp_date_range = temp_date;
     %     end
-    PLXVERSION=get(get(handles.uipanel10,'SelectedObject'),'String');
-    ph_combine_MP_and_TDT_data(handles.drive,handles.monke,temp_date,temp_block,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP)
+    PLXVERSION=get(get(handles.uipanel11,'SelectedObject'),'String');
+    ph_combine_MP_and_TDT_data(handles.drive,handles.monkey,temp_date,temp_block,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP)
 end
 if  TODO.CreateExcelEntries % Sorting excel table update
     DAG_update_sorting_table(handles.monkey,temp_date);
@@ -300,7 +313,14 @@ function checkbox4_CreateFcn(hObject, eventdata, handles)
 function checkbox5_CreateFcn(hObject, eventdata, handles)
 function checkbox6_CreateFcn(hObject, eventdata, handles)
 function checkbox7_CreateFcn(hObject, eventdata, handles)
-function checkbox36_CreateFcn(hObject, eventdata, handles)
+function checkbox8_CreateFcn(hObject, eventdata, handles)
+function checkbox9_CreateFcn(hObject, eventdata, handles)
+function checkbox91_CreateFcn(hObject, eventdata, handles)
+function checkbox92_CreateFcn(hObject, eventdata, handles)
+function checkbox10_CreateFcn(hObject, eventdata, handles)
+function checkbox101_CreateFcn(hObject, eventdata, handles)
+function checkbox102_CreateFcn(hObject, eventdata, handles)
+function checkbox103_CreateFcn(hObject, eventdata, handles)
 
 % Reformat Synapse
 function checkbox1_Callback(hObject, eventdata, handles)
@@ -313,30 +333,37 @@ update_notes('Create WaveClus pre-clustering from broadband data',get(hObject,'V
 function checkbox3_Callback(hObject, eventdata, handles)
 update_notes('Date is a single yyyymmdd or a list of specific yyyymmdd; yyyymmdd',get(hObject,'Value'),handles);
 
-% Realign Snippets
 function checkbox4_Callback(hObject, eventdata, handles)
-update_notes('Realigning Snippets - sortcodes will be taken from Plexsormanually',get(hObject,'Value'),handles);
+update_notes('Assign waveforms to "-01" PLX files, only for "from_BB"',get(hObject,'Value'),handles);
 
 % TDTfromPLX
 function checkbox5_Callback(hObject, eventdata, handles)
 update_notes('Date is a single yyyymmdd or a list of specific yyyymmdd; yyyymmdd',get(hObject,'Value'),handles);
 
-% Combine
+% Realign Snippets
 function checkbox6_Callback(hObject, eventdata, handles)
-update_notes('Date is a single yyyymmdd or a list of specific yyyymmdd; yyyymmdd',get(hObject,'Value'),handles);
-
+update_notes('Realigning Snippets - sortcodes will be taken from Plexsormanually',get(hObject,'Value'),handles);
 
 function checkbox7_Callback(hObject, eventdata, handles)
 update_notes('Automatically transfer WaveClus sorted data to Plexon for inspection',get(hObject,'Value'),handles);
 
 function checkbox8_Callback(hObject, eventdata, handles)
-update_notes('Create sorting table entries for the selected blocks',get(hObject,'Value'),handles);
+update_notes('Create sortcode table entries for the selected sessions',get(hObject,'Value'),handles);
 
-function checkbox36_Callback(hObject, eventdata, handles)
+% Combine
+function checkbox9_Callback(hObject, eventdata, handles)
+update_notes('Date is a single yyyymmdd or a list of specific yyyymmdd; yyyymmdd',get(hObject,'Value'),handles);
+
+function checkbox91_Callback(hObject, eventdata, handles)
 update_notes('Keep LFP that is already stored in the combined mat files',get(hObject,'Value'),handles);
 
-function checkbox38_Callback(hObject, eventdata, handles)
-update_notes('Assign waveforms to "-01" PLX files, only for "from_BB"',get(hObject,'Value'),handles);
+function checkbox92_Callback(hObject, eventdata, handles)
+update_notes('Keep Spikes that are already stored in the combined mat files',get(hObject,'Value'),handles);
+
+function checkbox10_Callback(hObject, eventdata, handles)
+update_notes('Create sorting table entries for the selected sessions',get(hObject,'Value'),handles);
+
+
 
 function update_notes(string,addorremove,handles)
 current_string=get(handles.text22,'String');
@@ -351,16 +378,16 @@ end
 
 
 % outputs only
-function checkbox11_Callback(hObject, eventdata, handles)
+function checkbox101_Callback(hObject, eventdata, handles)
 % raster plots
-function checkbox12_Callback(hObject, eventdata, handles)
+function checkbox102_Callback(hObject, eventdata, handles)
 % psths
-function checkbox13_Callback(hObject, eventdata, handles)
+function checkbox103_Callback(hObject, eventdata, handles)
 
 
 %% Monkey, date, Blocks
 function listbox1_Callback(hObject, eventdata, handles)
-function listbox2_Callback(hObject, eventdata, handles)
+%function listbox2_Callback(hObject, eventdata, handles)
 
 % monkey
 function popupmenu1_CreateFcn(hObject, eventdata, handles)
@@ -370,8 +397,8 @@ end
 function popupmenu1_Callback(hObject, eventdata, handles)
 monkeys=get(handles.popupmenu1,'String');
 monkey=get(handles.popupmenu1,'Value');
-handles.monke=monkeys{monkey};
-handles.monkey=[monkeys{monkey} '_phys'];
+handles.monkey=monkeys{monkey};
+handles.monkey_phys=[monkeys{monkey} '_phys'];
 set(handles.text1,'String',handles.monkey);
 guidata(hObject, handles);
 
@@ -383,7 +410,7 @@ end
 % Add dates
 function pushbutton11_Callback(hObject, eventdata, handles)
 current_folder=pwd;
-cd([handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey]);
+cd([handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey_phys]);
 folders = uipickfiles;
 cd(current_folder);
 if isempty(folders) || (~iscell(folders) && folders==0);
@@ -410,32 +437,32 @@ if ~isempty(handles.date_to_delete{1})
 end
 handles.dates=get(handles.listbox1,'string');
 guidata(hObject, handles);
-
-% block
-function listbox2_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-function edit1_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-function edit1_Callback(hObject, eventdata, handles)
-% add block
-function pushbutton13_Callback(hObject, eventdata, handles)
-additional_blocks=get(handles.edit1,'String');
-handles.blocks=[get(handles.listbox2,'string'); additional_blocks];
-set(handles.listbox2,'string',handles.blocks);
-guidata(hObject, handles);
-% delete block
-function pushbutton14_Callback(hObject, eventdata, handles)
-block_to_delete=get(handles.listbox2,{'String','Value'});
-if ~isempty(block_to_delete{1})
-    block_to_delete{1}(block_to_delete{2}(:)) = [];  % Delete the selected strings.
-    set(handles.listbox2,'string',block_to_delete{1},'val',1) % Set the new string.
-end
-handles.blocks=get(handles.listbox2,'string');
-guidata(hObject, handles);
+% 
+% % block
+% function listbox2_CreateFcn(hObject, eventdata, handles)
+% if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+%     set(hObject,'BackgroundColor','white');
+% end
+% function edit1_CreateFcn(hObject, eventdata, handles)
+% if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+%     set(hObject,'BackgroundColor','white');
+% end
+% function edit1_Callback(hObject, eventdata, handles)
+% % add block
+% function pushbutton13_Callback(hObject, eventdata, handles)
+% additional_blocks=get(handles.edit1,'String');
+% handles.blocks=[get(handles.listbox2,'string'); additional_blocks];
+% set(handles.listbox2,'string',handles.blocks);
+% guidata(hObject, handles);
+% % delete block
+% function pushbutton14_Callback(hObject, eventdata, handles)
+% block_to_delete=get(handles.listbox2,{'String','Value'});
+% if ~isempty(block_to_delete{1})
+%     block_to_delete{1}(block_to_delete{2}(:)) = [];  % Delete the selected strings.
+%     set(handles.listbox2,'string',block_to_delete{1},'val',1) % Set the new string.
+% end
+% handles.blocks=get(handles.listbox2,'string');
+% guidata(hObject, handles);
 
 %% Others
 
@@ -498,3 +525,5 @@ function edit20_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+

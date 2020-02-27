@@ -1,4 +1,4 @@
-function [SPK] = WC32SPK(tank,handles)
+function [SPK] = WC32SPK(handles)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %               TAKES WAVE_CLUS-FILES AND CREATES A SPKOBJ
@@ -29,7 +29,7 @@ function [SPK] = WC32SPK(tank,handles)
 c = tic;
 
 %######################## CHECK INPUT PARAMETERS ##########################
-
+tank=handles.foldername;
 %check tank input
 if ischar(tank) == 0            %check if tank is a string
     error('Wrong input argument: Second input parameter has to be a string specifying a folder.')

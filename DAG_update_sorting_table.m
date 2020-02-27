@@ -1,5 +1,5 @@
 function DAG_update_sorting_table(monkey,dates)
-% INPUT: update_sorting_table('Flaffus',{'20160608','20160609'})
+% INPUT: update_sorting_table('Flaffus',[20160608,20160609]
 % automatically updates 'Fla_sorted_neurons.xlsx' in the corresponding dropbox path
 % note that this function takes information from the "final_sorting" sheet,
 % and overrides "automatic_sorting" sheet, using:
@@ -18,17 +18,17 @@ main_folder_content=main_folder_content([main_folder_content.isdir]);
 main_folder_content(1:2)=[];
 subfolders={main_folder_content.name};
 if nargin>=2
-    %subfolders=subfolders(~cellfun(@(x) str2double(x)<daterange(1) || str2double(x)>daterange(2),subfolders));
     subfolders=subfolders(cellfun(@(x) ismember(str2double(x),dates),subfolders));
 end
 
 
-dropboxpath=['C:\Users\' getUserName '\Dropbox' filesep 'DAG' filesep 'phys' filesep monkey '_dpz'];
-[~, sheets_available]=xlsfinfo([dropboxpath filesep monkey(1:3) '_sorted_neurons.xlsx']);
+DBpath=getDropboxPath;
+DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
+[~, sheets_available]=xlsfinfo([DBfolder  monkey(1:3) '_sorted_neurons.xlsx']);
 if ismember('final_sorting',sheets_available)
-    [~, ~, sorting_table]=xlsread([dropboxpath filesep monkey(1:3) '_sorted_neurons.xlsx'],'final_sorting');
+    [~, ~, sorting_table]=xlsread([DBfolder  monkey(1:3) '_sorted_neurons.xlsx'],'final_sorting');
 elseif ismember('automatic_sorting',sheets_available)
-    [~, ~, sorting_table]=xlsread([dropboxpath filesep monkey(1:3) '_sorted_neurons.xlsx'],'automatic_sorting');
+    [~, ~, sorting_table]=xlsread([DBfolder  monkey(1:3) '_sorted_neurons.xlsx'],'automatic_sorting');
 else
     sorting_table={'Monkey','Session','Date','Run','Block','Chan','z','Unit','N_spk','Neuron_ID','Times_same_unit','Site_ID'};
 end
@@ -223,6 +223,6 @@ if size(old_table,1)>1
 end
 
 [complete_mastertable]=DAG_update_cell_table(sorting_table,old_table,'Date');
-xlswrite([dropboxpath filesep monkey(1:3) '_sorted_neurons.xlsx'],complete_mastertable,'automatic_sorting');
+xlswrite([DBfolder filesep monkey(1:3) '_sorted_neurons.xlsx'],complete_mastertable,'automatic_sorting');
 end
 

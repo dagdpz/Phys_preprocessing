@@ -15,7 +15,7 @@ settings.LFP_LP_bw_filter= 150;
 settings.LFP_LP_median_filter= 250;
 
 %% crate folders
-plxfilefolder                   = [data_path 'TDTtanks' filesep monkey filesep dates filesep];
+plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep dates filesep];
 TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep dates filesep block];
 mainraw_folder                  = strcat([data_path monkey '_mat_from_TDT']);
 temp_raw_folder                 = strcat([mainraw_folder filesep dates]);
@@ -30,6 +30,7 @@ end
 stream_state_info=0; % 1: using the stat stream data, 0: using only epoch stores (faster !!)
 % here we can derive the key for which plx-file to use
 PLXVERSION='';
+PLXEXTENSION='-01';
 DISREGARDLFP=0;
 for i = 1:2:length(varargin)
     eval([upper(varargin{i}) '=varargin{i+1};']);
@@ -55,9 +56,9 @@ Block_N=block(strfind(block,'-')+1:end);
 %% overwriting snippets with plx file (in case it exists and waveclus option was selected)
 % not entirely clean, but we want to keep the format we already have
 if strcmp(PLXVERSION,'Snippets')
-    plxfile=[plxfilefolder dates  '_blocks_' Block_N '-01.plx'];
+    plxfile=[plxfilefolder dates  '_blocks_' Block_N PLXEXTENSION '.plx'];
 else
-    plxfile=[plxfilefolder dates '_' PLXVERSION '_blocks_' Block_N '-01.plx'];
+    plxfile=[plxfilefolder dates '_' PLXVERSION '_blocks_' Block_N PLXEXTENSION '.plx'];
 end
 if exist(plxfile,'file')
     SPK=PLX2SPK(plxfile);            % convert the sorted plexon file into spkobj-format; merge the new sorted waveforms with the old SPKOBJ to geht thresholds and noiselevels as well.

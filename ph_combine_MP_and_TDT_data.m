@@ -34,11 +34,22 @@ PLXVERSION                  = ''; % plexon file version used, overwrites other s
 user                        = getUserName;
 disp(['Drive= ', drive, ' User= ', user, ' Monkey= ', monkey]);
 
-base_path                   = [drive 'Data\']; % [drive ':\Data\'];
-TDT_prefolder_dir           = [base_path 'TDTtanks' filesep monkey '_phys'];
-Combined_data_path          = strcat(base_path,[monkey '_phys_combined_monkeypsych_TDT']);
-TDT_data_path               = strcat(base_path ,monkey, '_phys_mat_from_TDT');
-MP_data_path                = strcat(base_path ,monkey);
+DBpath=getDropboxPath;
+DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_phys_dpz' filesep];
+base_path                   = [drive 'Data' filesep]; % [drive ':\Data\'];
+TDT_prefolder_dir           = [base_path 'TDTtanks' filesep monkey '_phys' filesep];
+Combined_data_path          = strcat(base_path,[monkey '_phys_combined_monkeypsych_TDT' filesep]);
+TDT_data_path               = strcat(base_path ,monkey, '_phys_mat_from_TDT', filesep);
+MP_data_path                = strcat(base_path ,monkey, filesep);
+
+%% get plx_file_table_to use
+[~, ~, plx_file_table]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'list_of_used_plx_files');
+for c=1:size(plx_file_table,2)
+    column_name = strrep(plx_file_table{1,c},' ','_');
+    column_name = strrep(column_name,'?','');
+    plx_file_table{1,c}=column_name;
+    idx.(column_name)=find_column_index(plx_file_table,column_name);
+end
 
 % upper might interfere here, but we are not really using variable
 % inputs anyway at this stage
@@ -49,8 +60,6 @@ if DISREGARDLFP
     DONTREAD=[DONTREAD, {'BROA','Broa','LFPx'}];
     DONTREAD=unique(DONTREAD);
 end
-TDT_trial_struct_input      = {'SORTNAME',SORTNAME,'DONTREAD',DONTREAD,'EXCLUSIVELYREAD',EXCLUSIVELYREAD,'CHANNELS',CHANNELS,...
-    'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'DISREGARDLFP',DISREGARDLFP};
 
 dir_folder_with_session_days=dir(TDT_prefolder_dir); % dir
 session_folders=[];
@@ -64,7 +73,8 @@ for k=1: length(dir_folder_with_session_days)
 end
 for fol=1:numel(session_folders)
     date=session_folders{fol};
-    block_folders              = dir([base_path 'TDTtanks' filesep monkey '_phys' filesep date filesep 'Block-*']);
+    date_num=str2num(date);
+    block_folders              = dir([TDT_prefolder_dir date filesep 'Block-*']);
     block_folders              = block_folders([block_folders.isdir]);
     if ~isempty(blocks)
         for b=1:numel(blocks)
@@ -73,8 +83,28 @@ for fol=1:numel(session_folders)
     else
         blocks_string={block_folders.name}';
     end
+    xlswrite([TDT_data_path date filesep monkey(1:3) '_plx_files.xlsx'],plx_file_table,'list_of_used_plx_files');
+    
     for i=1:numel(blocks_string);
         block = blocks_string{i};
+        block_num=str2num(block(findstr(block,'-')+1:end));
+        
+        plx_file_idx=[false, [plx_file_table{2:end,idx.Date}]==date_num] & [false, [plx_file_table{2:end,idx.Block}]==block_num];
+        if sum(plx_file_idx)>1
+            disp('More than one sortcode entry, skipping')
+            plx_file_idx=find(plx_file_idx,'first');
+        end
+        if ~any(plx_file_idx) % to make sure it also runs without associated plx files
+            PLXVERSION='none';
+            PLXEXTENSION='-00';
+        else
+            PLXVERSION=plx_file_table{plx_file_idx,idx.Sorttype};
+            PLXEXTENSION=sprintf('-%02d',plx_file_table{plx_file_idx,idx.Plx_file_extension});
+        end
+        
+        
+        TDT_trial_struct_input      = {'SORTNAME',SORTNAME,'DONTREAD',DONTREAD,'EXCLUSIVELYREAD',EXCLUSIVELYREAD,'CHANNELS',CHANNELS,...
+            'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'PLXEXTENSION',PLXEXTENSION,'DISREGARDLFP',DISREGARDLFP};
         TDT_trial_struct_working(base_path,[monkey '_phys'],date,block,TDT_trial_struct_input{:})
     end
 end
@@ -92,7 +122,7 @@ for l=1:n_MP
 end
 folders_to_create=unique(filelist_session_MP(matching_TDT_MP_session_runs,1));
 for idx_match   = 1:numel(folders_to_create)
-    mkdir([base_path, monkey '_phys_combined_monkeypsych_TDT'],folders_to_create{idx_match});
+    mkdir(Combined_data_path,folders_to_create{idx_match});
 end
 folders_to_combine=unique(filelist_formatted_MP(matching_TDT_MP_session_runs));
 
@@ -129,9 +159,9 @@ for idx_c       = 1:numel(folders_to_combine)
                     temp_name=TDT_fieldnames(idx_names);
                     [trial(block_index).(['TDT_' temp_name{:}])]=TDT_trial(block_index).(temp_name{:});
                 end
-                folder_to_save_to=[base_path, monkey '_phys_combined_monkeypsych_TDT' filesep  individual_day_folder_MP(end-7:end) ];
-                disp(['saving ' folder_to_save_to filesep current_file(1:3) 'combined' current_file(4:end-4), '_block_', sprintf('%02d',block), '.mat'])
-                save([folder_to_save_to filesep current_file(1:3) 'combined' current_file(4:end-4), '_block_', sprintf('%02d',block), '.mat'],'task','trial','SETTINGS','First_trial_INI')
+                current_file_path=[Combined_data_path  individual_day_folder_MP(end-7:end) filesep current_file(1:3) 'combined' current_file(4:end-4), '_block_', sprintf('%02d',block), '.mat'];
+                disp(['saving ' current_file_path])
+                save(current_file_path,'task','trial','SETTINGS','First_trial_INI')
             end
         end
     end

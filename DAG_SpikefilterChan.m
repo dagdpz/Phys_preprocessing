@@ -1,14 +1,16 @@
 function DAG_SpikefilterChan(handles)
 
-stop_f = handles.linenoisefrequ;
-sr = handles.par.sr;
-hpcutoff = handles.hpcutoff;
-lpcutoff = handles.lpcutoff;
-transform_factor = handles.par.transform_factor;
-rawname = handles.rawname;
-dtyperead = handles.dtyperead;
-dtypewrite = handles.dtypewrite;
+%% simplifying handles
+stop_f      = handles.linenoisefrequ;
+sr          = handles.par.sr;
+hpcutoff    = handles.hpcutoff;
+lpcutoff    = handles.lpcutoff;
+tf_factor   = handles.par.transform_factor;
+rawname     = handles.rawname;
+dtyperead   = handles.dtyperead;
+dtypewrite  = handles.dtypewrite;
 
+%% defining number of samples for median filter
 if strcmp(handles.hp,'med')
     n = floor(sr/hpcutoff);
     if ~mod(n,2)
@@ -16,16 +18,16 @@ if strcmp(handles.hp,'med')
     end
 end
 
-
-if handles.blockfile
+%% get filelist
+if handles.blockfile %% always 0 as far as i can see?
     files = dir('dataraw_ch*.mat');
     files = {files.name};
 else
-    files = dir(rawname);
+    files = dir([handles.WC_block_folder rawname]);
     files = {files.name};
 end
 
-warning off
+warning off % annoying concatenation warnings?
 
 for i = 1 : length(files)
     tic
@@ -33,11 +35,11 @@ for i = 1 : length(files)
     filename =  files{i};
     switch handles.sys
         case 'TD'
-            channel_file_handle = fopen(filename, 'r');                       %'r' - read the indicated channel file
+            channel_file_handle = fopen([handles.WC_block_folder filename], 'r');                       %'r' - read the indicated channel file
             data = fread(channel_file_handle, [dtyperead '=>' dtyperead]);             %reads out the data, int16 - class of input and output values
             fclose(channel_file_handle);
             
-            data = double(data)/transform_factor;
+            data = double(data)/tf_factor;
             
             if handles.iniartremovel
                 data(1:40) = nanmean(data(41:80));
@@ -45,21 +47,11 @@ for i = 1 : length(files)
             
             %MISSING: relevant information (such as sampling rate) from
             %TDT!!
-            
-        case 'BR'
-            load(files{i});
-            data = double(data);
-            
-        case 'RHD2000'
-            load(files{i});
-            data = double(data);
     end
     
-    if size(data,2) == 1
+    if size(data,2) == 1 % for only one channel?
         data = data';
     end
-    
-    %namefile = files{i}
     
     if handles.linenoisecancelation
         
@@ -84,17 +76,15 @@ for i = 1 : length(files)
         data=filtfilt(b,a,data);
     end
     
-    [b,a] = butter(2,lpcutoff*2/sr,'low');
+    [b,a] = butter(2,lpcutoff*2/sr,'low'); % butterworth for low pass in any case
     data=filtfilt(b,a,data);
     
     data = eval([dtypewrite '(data)']);
-    %save(['datafilt_ch' sprintf('%03d',str2double(namefile(strfind(namefile,'ch')+2:end-4)))],'data');
-    save(['datafilt_ch' sprintf('%03d',str2double(filename(strfind(filename,'_')+1:end-6)))],'data');
+    save([handles.WC_block_folder 'datafilt_ch' sprintf('%03d',str2double(filename(strfind(filename,'_')+1:end-6)))],'data');
     
-    clear filename data
+    clear data
     toc
 end
-clear files
 
 warning on
 

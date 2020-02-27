@@ -1,17 +1,21 @@
-function DAG_create_PLX(tankname,monkey,recordingnames,processing_mode)
+function DAG_create_PLX(Session_as_num,monkey_phys,recordingnames,processing_mode)
+Session_as_str=num2str(Session_as_num);
 drive=get_dag_drive_IP;
 DBpath=getDropboxPath;
-DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
+DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
 
 %% load electrode depths for selecting which electrodes are useful
 % AND for defining which blocks should be concatinated per channel
-run([DBfolder 'Electrode_depths_' monkey(1:3)]);
-channels_to_process=unique([channels{cell2mat(Session)==tankname}]);
+run([DBfolder 'Electrode_depths_' monkey_phys(1:3)]);
+channels_to_process=unique([channels{cell2mat(Session)==Session_as_num}]);
 
 %% CREATE PLX FILE(S) from snippets
 handles.par.sr = 24414.0625; % can this one be taken from the files themselves?
 handles.threshold='neg';
-tank = [drive '\Data\TDTtanks' filesep monkey filesep num2str(tankname) '\'];          % path of recordings
+handles.sortcodes_folder        = [drive 'Data' filesep 'Sortcodes' filesep monkey_phys filesep Session_as_str filesep];          % path of recordings
+handles.tank_folder             = [drive 'Data' filesep 'TDTtanks'  filesep monkey_phys filesep Session_as_str filesep];
+handles.WC_concatenation_folder = [handles.sortcodes_folder 'WC' filesep];
+%tank = [drive '\Data\TDTtanks' filesep monkey filesep num2str(Session_as_num) '\'];          % path of recordings
 handles.task_times=[];
 if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,'PLXFromSnippets')
     for ii =1:length(recordingnames)
@@ -22,7 +26,7 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
         
         %         state_information = TDTbin2mat_working([drive 'Data\TDTtanks' filesep monkey], num2str(tankname), recordingnames{ii}, 'EXCLUSIVELYREAD',{'SVal'},'SORTNAME', 'Plexsormanually');
         
-        data = TDTbin2mat_working([drive 'Data\TDTtanks' filesep monkey filesep num2str(tankname) filesep recordingnames{ii}], 'EXCLUSIVELYREAD',{'eNeu','SVal'},'SORTNAME', 'Plexsormanually');
+        data = TDTbin2mat_working([handles.tank_folder recordingnames{ii}], 'EXCLUSIVELYREAD',{'eNeu','SVal'},'SORTNAME', 'Plexsormanually');
         snippets=data.snips.eNeu;
         state_information=data.epocs.SVal;
         %         offs=[];
@@ -36,18 +40,18 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
         
         
         if strcmp(processing_mode,'PLXFromRealignedSnippets')
-            folder      =['RA_' recordingnames{ii} '\'];
-            plxfilename=[tank tank(end-8:end-1) '_realigned_' recname '.plx'];
+            folder      =['RA_' recordingnames{ii} filesep];
+            plxfilename=[handles.sortcodes_folder Session_as_str '_realigned_' recname '.plx'];
             handles.realign_snippets=1;
         elseif  strcmp(processing_mode,'PLXFromSnippets')
-            folder      =['SN_' recordingnames{ii} '\'];
-            plxfilename=[tank tank(end-8:end-1) '_' recname '.plx'];
+            folder      =['SN_' recordingnames{ii} filesep];
+            plxfilename=[handles.sortcodes_folder Session_as_str '_' recname '.plx'];
             handles.realign_snippets=0;
         end
         
-        handles.foldername=[tank folder];
-        if ~exist([tank filesep folder],'dir')
-            mkdir(tank,folder);
+        handles.foldername=[handles.sortcodes_folder folder];
+        if ~exist(handles.foldername,'dir')
+            mkdir(handles.sortcodes_folder,folder);
         end
         snippets.data=snippets.data*1000; %debugged 20180723
         
@@ -55,7 +59,7 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
         
         TDT2WC3_from_snippets(handles,snippets);
         
-        SPK = WC32SPK(handles.foldername,handles); %% foldername is now part of the handles...?
+        SPK = WC32SPK(handles); %% foldername is now part of the handles...?
         SPK.int_factor = 1;
         SPK2PLX(SPK,plxfilename);
     end
@@ -64,9 +68,9 @@ end
 %% CREATE PLX FILE(S) from WC --> slightly different because WC files are concatinated across blocks with the same electrode depth
 if strcmp(processing_mode,'PLXFromWCFromBB')
     handles.threshold ='neg';
-    handles.main_folder=[drive 'Data\TDTtanks' filesep monkey filesep num2str(tankname) filesep];
-    handles.WC_concatenation_folder=[handles.main_folder 'WC' filesep];
-    blocks_in_this_session=[block{cell2mat(Session)==tankname}];
+%     handles.main_folder=[drive 'Data\TDTtanks' filesep monkey filesep num2str(Session_as_num) filesep];
+%     handles.WC_concatenation_folder=[handles.main_folder 'WC' filesep];
+    blocks_in_this_session=[block{cell2mat(Session)==Session_as_num}];
     load([handles.WC_concatenation_folder 'concatenation_info'])
     handles.sr=sr;
     for b=blocks_in_this_session
@@ -90,7 +94,7 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
             end
             SPK.waveforms(idx,:)=SPK.waveforms(idx,:)/wf_scale(b,chan);
         end
-        plxfilename=[tank num2str(tankname) '_from_BB_' recname '.plx'];
+        plxfilename=[handles.sortcodes_folder Session_as_str '_from_BB_' recname '.plx'];
         SPK2PLX(SPK,plxfilename);
     end
     % save scales used
