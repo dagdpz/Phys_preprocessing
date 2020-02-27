@@ -1,6 +1,6 @@
 function phys_gui_working(varargin)
 
-% Last Modified by GUIDE v2.5 27-Feb-2020 11:08:30
+% Last Modified by GUIDE v2.5 27-Feb-2020 15:52:57
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -36,9 +36,9 @@ varargout{1} = handles.output;
 set(handles.checkbox1,'Value',0);
 set(handles.checkbox2,'Value',0);
 set(handles.checkbox3,'Value',0);
-set(handles.checkbox4,'Value',0);
-set(handles.checkbox5,'Value',0);
 set(handles.checkbox6,'Value',0);
+set(handles.checkbox6,'Value',0);
+set(handles.checkbox5,'Value',0);
 set(handles.checkbox7,'Value',0);
 set(handles.checkbox8,'Value',0);
 set(handles.checkbox9,'Value',0);
@@ -324,56 +324,81 @@ function checkbox103_CreateFcn(hObject, eventdata, handles)
 
 % Reformat Synapse
 function checkbox1_Callback(hObject, eventdata, handles)
-update_notes('Select tank folder with Synapse (Setup 3) format to reformat to match to the names of Setup 1 and 2',get(hObject,'Value'),handles);
+update_notes('Reformatting elected Synapse tank folder (Setup 3) to match to structure of Setup 1 and 2',get(hObject,'Value'),handles,1);
+
 % PLXFromBB
 function checkbox2_Callback(hObject, eventdata, handles)
-update_notes('Create WaveClus pre-clustering from broadband data',get(hObject,'Value'),handles);
+update_notes('Create WaveClus pre-clustering from broadband data',get(hObject,'Value'),handles,2);
 
 % PLXfromTDT
 function checkbox3_Callback(hObject, eventdata, handles)
-update_notes('Date is a single yyyymmdd or a list of specific yyyymmdd; yyyymmdd',get(hObject,'Value'),handles);
-
-function checkbox4_Callback(hObject, eventdata, handles)
-update_notes('Assign waveforms to "-01" PLX files, only for "from_BB"',get(hObject,'Value'),handles);
+update_notes('Create plx file (without extension) from waveclus',get(hObject,'Value'),handles,3);
 
 % TDTfromPLX
-function checkbox5_Callback(hObject, eventdata, handles)
-update_notes('Date is a single yyyymmdd or a list of specific yyyymmdd; yyyymmdd',get(hObject,'Value'),handles);
+function checkbox4_Callback(hObject, eventdata, handles)
+update_notes('Create plx file (without extension) from Snippets',get(hObject,'Value'),handles,4);
 
 % Realign Snippets
+function checkbox5_Callback(hObject, eventdata, handles)
+update_notes('Create plx file (without extension) from realigned Snippets',get(hObject,'Value'),handles,5);
+
+
 function checkbox6_Callback(hObject, eventdata, handles)
-update_notes('Realigning Snippets - sortcodes will be taken from Plexsormanually',get(hObject,'Value'),handles);
+update_notes('Assign waveforms from from_BB.plx to "from_BB-01.plx"',get(hObject,'Value'),handles,6);
 
 function checkbox7_Callback(hObject, eventdata, handles)
-update_notes('Automatically transfer WaveClus sorted data to Plexon for inspection',get(hObject,'Value'),handles);
+update_notes('??',get(hObject,'Value'),handles,7);
 
 function checkbox8_Callback(hObject, eventdata, handles)
-update_notes('Create sortcode table entries for the selected sessions',get(hObject,'Value'),handles);
+update_notes('Update sortcode table for selected sessions',get(hObject,'Value'),handles,8);
 
 % Combine
 function checkbox9_Callback(hObject, eventdata, handles)
-update_notes('Date is a single yyyymmdd or a list of specific yyyymmdd; yyyymmdd',get(hObject,'Value'),handles);
+update_notes('Create combined mat file for postprocessing',get(hObject,'Value'),handles,9);
 
 function checkbox91_Callback(hObject, eventdata, handles)
-update_notes('Keep LFP that is already stored in the combined mat files',get(hObject,'Value'),handles);
+update_notes('Keep LFP that is stored in the combined mat files',get(hObject,'Value'),handles,10);
 
 function checkbox92_Callback(hObject, eventdata, handles)
-update_notes('Keep Spikes that are already stored in the combined mat files',get(hObject,'Value'),handles);
+update_notes('Keep Spikes that are stored in the combined mat files ',get(hObject,'Value'),handles,11);
 
 function checkbox10_Callback(hObject, eventdata, handles)
-update_notes('Create sorting table entries for the selected sessions',get(hObject,'Value'),handles);
+update_notes('Update sorting table for selected sessions',get(hObject,'Value'),handles,12);
 
 
 
-function update_notes(string,addorremove,handles)
-current_string=get(handles.text22,'String');
-instringposition=strfind(current_string,string);
-if addorremove
-    set(handles.text22,'String',[current_string ' ' string]);
-elseif any(instringposition)
-    current_string(instringposition:instringposition+numel(string)-1)=[];
-    set(handles.text22,'String',current_string);
+function update_notes(string,addorremove,handles,n)
+current_string_o=get(handles.text22,'String');
+current_string=cellstr(current_string_o);
+tags=get(handles.text22,'tag');
+% if ischar(tags) && strcmp(tags,'text22')
+%    tags=''; 
+% end
+if isempty(current_string_o);
+    current_string={string};
+    tags=num2str(n); 
+    tags_num=n;
+else
+    instringposition=ismember(current_string,string);
+    if addorremove
+        %         current_string={string};
+        %         tags=num2str(n);
+        %     else
+        tags=[tags '  ' num2str(n)];
+        current_string=[current_string; string];
+        tags_num=str2num(tags);
+    elseif any(instringposition)
+        current_string(instringposition)=[];
+        tags_num=str2num(tags);
+        tags_num(instringposition)=[];
+    end
 end
+[tags_num, tag_idx]=sort(tags_num);
+current_string=current_string(tag_idx);
+tags=num2str(tags_num);
+
+set(handles.text22,'String',current_string);
+set(handles.text22,'tag',tags);
 
 
 
