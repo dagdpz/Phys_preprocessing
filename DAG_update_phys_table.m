@@ -257,8 +257,8 @@ for k=1:loop_N
     xlswrite([current_folder filesep monkey '_protocol.xls'],complete_mastertable(startrowidx:endrowidx,:),'Mastertable',xls_index_range);
 end
 
-xlscolor([current_folder filesep monkey '_protocol.xls'],complete_mastertable, false(size(change_matrix)));
-xlscolor([current_folder filesep monkey '_protocol.xls'],complete_mastertable, change_matrix);
+DAG_xlscolor([current_folder filesep monkey '_protocol.xls'],complete_mastertable, false(size(change_matrix)));
+DAG_xlscolor([current_folder filesep monkey '_protocol.xls'],complete_mastertable, change_matrix);
 
 % if ~isdir([current_folder filesep monkey]); mkdir(current_folder,monkey); end
 %save([current_folder filesep monkey, '_prot_',num2str(dates(1)), '-', num2str(dates(2))],'mastertable')

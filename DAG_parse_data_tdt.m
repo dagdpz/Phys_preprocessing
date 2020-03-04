@@ -48,8 +48,10 @@ for ch = channels
     end
     
     fwrite(fout,data.streams.(streamname).data,'single');
+    fclose(fout);
     lts = numel(data.streams.(streamname).data);
     clear data
+    
 end
 
 save(handles.TDT_meta_data_file,'sr','lts','channels')

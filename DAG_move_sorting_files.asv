@@ -1,8 +1,11 @@
-function success=DAG_move_sorting_files(old_location,new_location,folders_to_not_move,fileparts_to_not_move,deleteorigin)
-% folders_to_not_move={'Block-'};
-% fileparts_to_not_move={};
-% old_location='Y:\Data\Sortcodes\Flaffus_phys\20160722\';
+function success=DAG_move_sorting_files(old_location,new_location,deleteorigin,folders_to_not_move,fileparts_to_not_move)
+
+
 % new_location='Y:\Data\TDTtanks\Flaffus_phys\20160722\';
+% old_location='Y:\Data\Sortcodes\Flaffus_phys\20160722\';
+
+% folders_to_not_move={'Block-'};
+% fileparts_to_not_move={'desktop.ini'};
 % deleteorigin=0;
 
 %% create folders if not existent
