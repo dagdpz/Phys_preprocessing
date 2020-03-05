@@ -8,11 +8,11 @@ function TDT_trial_struct_working(data_path,monkey,dates,block,varargin)
 % Danial Arabali & Lukas Schneider
 
 
-settings.LFP_notch_filter1= [49.9 50.1];
-settings.LFP_notch_filter2= [99.9 100.1];
-settings.LFP_HP_filter= 1;
-settings.LFP_LP_bw_filter= 150;
-settings.LFP_LP_median_filter= 250;
+preprocessing_settings.LFP_notch_filter1= [49.9 50.1];
+preprocessing_settings.LFP_notch_filter2= [99.9 100.1];
+preprocessing_settings.LFP_HP_filter= 1;
+preprocessing_settings.LFP_LP_bw_filter= 150;
+preprocessing_settings.LFP_LP_median_filter= 250;
 
 %% crate folders
 plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep dates filesep];
@@ -34,6 +34,7 @@ PLXEXTENSION='-01';
 DISREGARDLFP=0;
 for i = 1:2:length(varargin)
     eval([upper(varargin{i}) '=varargin{i+1};']);
+    eval(['preprocessing_settings.(upper(varargin{i}))' '=varargin{i+1};']);
 end
 
 %% read in info only first, so we can load channel by channel (of broadband/LFP) later on
@@ -60,6 +61,7 @@ if strcmp(PLXVERSION,'Snippets')
 else
     plxfile=[plxfilefolder dates '_' PLXVERSION '_blocks_' Block_N PLXEXTENSION '.plx'];
 end
+preprocessing_settings.plxfile=plxfile;
 if exist(plxfile,'file')
     SPK=PLX2SPK(plxfile);            % convert the sorted plexon file into spkobj-format; merge the new sorted waveforms with the old SPKOBJ to geht thresholds and noiselevels as well.
     %backscaling (see DAG_create_PLX)
@@ -180,12 +182,12 @@ end
 stream_fieldnames=fieldnames(datainfo.stores);
 BB_index=ismember(stream_fieldnames,{'BROA','Broa'});
 LFP_index=ismember(stream_fieldnames,{'LFPx'});
-settings.LFP_from='Broa';
+preprocessing_settings.LFP_from='Broa';
 % don't consider broadband if its sampling rate is below 5000 Hz
 if ~any(BB_index) || datainfo.stores.(stream_fieldnames{BB_index}).fs<5000
     stream_fieldnames(BB_index)=[];
     BB_index=false(size(stream_fieldnames));
-    settings.LFP_from='LFPx';
+    preprocessing_settings.LFP_from='LFPx';
 end
 
 %% load excel lag table if applicable
@@ -223,14 +225,14 @@ if any(BB_index)
             chandata=[zeros(1,abs(lag_in_samples)) chandata];
         end
         %% filter BB to LFP
-        data.streams.LFPx.data(channel,:)=filter_function(chandata,samplingrate,SR_factor,size(data.streams.LFPx.data,2),settings);
+        data.streams.LFPx.data(channel,:)=filter_function(chandata,samplingrate,SR_factor,size(data.streams.LFPx.data,2),preprocessing_settings);
     end
     clear chandata
 elseif any(LFP_index)
     samplingrate=data.streams.LFPx.fs;
     for channel=1: size(data.streams.LFPx.data,1)
         %% filter LFP 1000 Hz
-        data.streams.LFPx.data(channel,:)=filter_function_simple(data.streams.LFPx.data(channel,:),samplingrate,settings);
+        data.streams.LFPx.data(channel,:)=filter_function_simple(data.streams.LFPx.data(channel,:),samplingrate,preprocessing_settings);
     end
 end
 
@@ -376,26 +378,26 @@ for r=1:numel(unique_runs)          % looping through runs
     TDT_trial_temp=orderfields(TDT_trial_temp);
     TDT_trial(Validtrials)=TDT_trial_temp(Validtrials);
     First_trial_INI=First_trial_INI_temp;
-    save(filename,'TDT_trial','First_trial_INI')
-    save([mainraw_folder filesep dates '_settings'],'settings');
+    save(filename,'TDT_trial','First_trial_INI','preprocessing_settings')
+    %save([mainraw_folder filesep dates '_settings'],'preprocessing_settings');
 end
 end
 
-function  Output_stream=filter_function(Input_stream,samplingrate,SR_factor,N_samples_original,settings)
+function  Output_stream=filter_function(Input_stream,samplingrate,SR_factor,N_samples_original,preprocessing_settings)
 %bandstop filter 50 Hz
-[b,a]=butter(2,settings.LFP_notch_filter1*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP_notch_filter1*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(Input_stream));
 
 %bandstop filter 50 Hz
-[b,a]=butter(2,settings.LFP_notch_filter2*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP_notch_filter2*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(datafilt));
 
 % highpass
-[b,a]=butter(4, settings.LFP_HP_filter*2/samplingrate, 'high'); % 'low', 'high
+[b,a]=butter(4, preprocessing_settings.LFP_HP_filter*2/samplingrate, 'high'); % 'low', 'high
 datafilt=  filtfilt(b,a, datafilt);
 
 % lowpass
-n = floor(samplingrate/settings.LFP_LP_median_filter);
+n = floor(samplingrate/preprocessing_settings.LFP_LP_median_filter);
 datafilt = DAG_median_filter(datafilt,n);
 
 
@@ -424,20 +426,20 @@ end
 Output_stream=nanmean(reshape(datafilt,SR_factor,numel(datafilt)/SR_factor),1);
 end
 
-function  Output_stream=filter_function_simple(Input_stream,samplingrate,settings)
+function  Output_stream=filter_function_simple(Input_stream,samplingrate,preprocessing_settings)
 %bandstop filter 50 Hz
-[b,a]=butter(2,settings.LFP_notch_filter1*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP_notch_filter1*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(Input_stream));
 
 %bandstop filter 50 Hz
-[b,a]=butter(2,settings.LFP_notch_filter2*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP_notch_filter2*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(datafilt));
 
 % highpass
-[b,a]=butter(4, settings.LFP_HP_filter*2/samplingrate, 'high'); % 'low', 'high
+[b,a]=butter(4, preprocessing_settings.LFP_HP_filter*2/samplingrate, 'high'); % 'low', 'high
 datafilt=  filtfilt(b,a, datafilt);
 
 % lowpass
-[b,a]=butter(4, settings.LFP_LP_bw_filter*2/samplingrate, 'low'); % 'low', 'high
+[b,a]=butter(4, preprocessing_settings.LFP_LP_bw_filter*2/samplingrate, 'low'); % 'low', 'high
 Output_stream=  filtfilt(b,a, datafilt);
 end
