@@ -189,7 +189,7 @@ if ~any(BB_index) || datainfo.stores.(stream_fieldnames{BB_index}).fs<5000
 end
 
 %% load excel lag table if applicable
-DBpath=getDropboxPath;
+DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
 lag_table_string={'Session','Block','lag_seconds'};
 lag_table_num=zeros(size(lag_table_string));

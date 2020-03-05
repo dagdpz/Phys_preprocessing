@@ -10,7 +10,7 @@ function DAG_update_sorting_table(monkey,dates)
 % asked to copy the "automatic sorting" sheet to "final sorting", to make
 % sure no valuable information is lost in the automatic process
 
-dag_drive=get_dag_drive_IP;
+dag_drive=DAG_get_server_IP;
 
 main_folder=[dag_drive filesep 'Data' filesep monkey '_combined_monkeypsych_TDT' filesep];
 main_folder_content=dir(main_folder);
@@ -22,7 +22,7 @@ if nargin>=2
 end
 
 
-DBpath=getDropboxPath;
+DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
 [~, sheets_available]=xlsfinfo([DBfolder  monkey(1:3) '_sorted_neurons.xlsx']);
 if ismember('final_sorting',sheets_available)
@@ -33,7 +33,7 @@ else
     sorting_table={'Monkey','Session','Date','Run','Block','Chan','z','Unit','N_spk','Neuron_ID','Times_same_unit','Site_ID'};
 end
 old_table=sorting_table;
-dateindex_old=find_column_index(old_table,'Date');
+dateindex_old=DAG_find_column_index(old_table,'Date');
 if ~isempty(dateindex_old)
     dates_old=[old_table{2:end,dateindex_old}];
     unique_old_dates=unique(dates_old);
@@ -48,7 +48,7 @@ for c=1:numel(sorting_table)
     column_name = strrep(sorting_table{c},' ','_');
     column_name = strrep(column_name,'?','');
     sorting_table{c}=column_name;
-    idx.(column_name)=find_column_index(sorting_table,column_name);
+    idx.(column_name)=DAG_find_column_index(sorting_table,column_name);
 end
 old_table(1,:)=sorting_table;
 

@@ -34,7 +34,7 @@ PLXVERSION                  = ''; % plexon file version used, overwrites other s
 user                        = getUserName;
 disp(['Drive= ', drive, ' User= ', user, ' Monkey= ', monkey]);
 
-DBpath=getDropboxPath;
+DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_phys_dpz' filesep];
 base_path                   = [drive 'Data' filesep]; % [drive ':\Data\'];
 TDT_prefolder_dir           = [base_path 'TDTtanks' filesep monkey '_phys' filesep];
@@ -48,7 +48,7 @@ for c=1:size(plx_file_table,2)
     column_name = strrep(plx_file_table{1,c},' ','_');
     column_name = strrep(column_name,'?','');
     plx_file_table{1,c}=column_name;
-    idx.(column_name)=find_column_index(plx_file_table,column_name);
+    idx.(column_name)=DAG_find_column_index(plx_file_table,column_name);
 end
 
 % upper might interfere here, but we are not really using variable
@@ -112,8 +112,8 @@ end
 if exist(Combined_data_path)~=7
     mkdir(base_path,[monkey '_phys_combined_monkeypsych_TDT'])
 end
-[filelist_complete_TDT, filelist_formatted_TDT, filelist_session_TDT]    = get_filelist_from_folder(TDT_data_path,dates);
-[filelist_complete_MP, filelist_formatted_MP, filelist_session_MP]       = get_filelist_from_folder(MP_data_path,dates);
+[filelist_complete_TDT, filelist_formatted_TDT, filelist_session_TDT]    = DAG_get_filelist_from_folder(TDT_data_path,dates);
+[filelist_complete_MP, filelist_formatted_MP, filelist_session_MP]       = DAG_get_filelist_from_folder(MP_data_path,dates);
 %% Here we are assuming that we will always have a task going for a block to make sense
 % Well, we can not assign a trial structure if we don't have a task...!!
 n_MP            = size(filelist_session_MP,1);
@@ -167,7 +167,7 @@ for idx_c       = 1:numel(folders_to_combine)
     end
 end
 
-function [filelist_complete, filelist_formatted, filelist_session] = get_filelist_from_folder(folder_with_session_days,dates)
+function [filelist_complete, filelist_formatted, filelist_session] = DAG_get_filelist_from_folder(folder_with_session_days,dates)
 
 dir_folder_with_session_days=dir(folder_with_session_days); % dir
 session_folders=[];

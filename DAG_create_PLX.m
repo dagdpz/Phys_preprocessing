@@ -1,7 +1,7 @@
 function DAG_create_PLX(Session_as_num,monkey_phys,recordingnames,processing_mode)
 Session_as_str=num2str(Session_as_num);
-drive=get_dag_drive_IP;
-DBpath=getDropboxPath;
+drive=DAG_get_server_IP;
+DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
 
 %% load electrode depths for selecting which electrodes are useful

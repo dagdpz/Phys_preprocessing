@@ -74,8 +74,8 @@ end
 %monkey=handles.monkey;
 monkey_phys=handles.monkey_phys;
 current_path=pwd;
-drive=get_dag_drive_IP;
-DBpath=getDropboxPath;
+drive=DAG_get_server_IP;
+DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
 
 %% load electrode depths for selecting which electrodes are useful

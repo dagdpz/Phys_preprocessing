@@ -24,7 +24,7 @@ function phys_gui_working_OpeningFcn(hObject, eventdata, handles, varargin)
 %% here we set 'globals'.. need to be as handles and every time they are modified we need to call guidata(hObject, handles)
 handles.output = hObject;
 handles.user = getUserName;
-handles.drive = get_dag_drive_IP;
+handles.drive = DAG_get_server_IP;
 handles.monkey = '';
 
 guidata(hObject, handles);
@@ -63,7 +63,7 @@ set(ha,'handlevisibility','off', 'visible','off')
 
 %% Postprocessing
 function pushbutton21_Callback(hObject, eventdata, handles)
-[handles.fout handles.project handles.version handles.exit handles.guihandle]= set_parameters_phys_ui();
+[handles.fout handles.project handles.version handles.exit handles.guihandle]= PGUI_set_postprocessing_parameters();
 %handles.fout=out;
 guidata(hObject, handles);
 if ischar(handles.fout)

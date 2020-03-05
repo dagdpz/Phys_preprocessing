@@ -14,7 +14,7 @@ if nargin<3
     options.preferred_SortType='Snippets';
     options.preferred_Plx_file_extension='first';
 end
-dag_drive=get_dag_drive_IP;
+dag_drive=DAG_get_server_IP;
 
 main_folder=[dag_drive 'Data' filesep 'Sortcodes' filesep monkey filesep];
 main_folder_content=dir(main_folder);
@@ -26,7 +26,7 @@ if nargin>=2
 end
 
 
-DBpath=getDropboxPath;
+DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
 sheets_available={};
 if exist([DBfolder  monkey(1:3) '_plx_files.xlsx'],'file')
@@ -38,7 +38,7 @@ else
     sorting_table={'Monkey','Date','Block','Sorttype','Plx_file_extension'};
 end
 old_table=sorting_table;
-dateindex_old=find_column_index(old_table,'Date');
+dateindex_old=DAG_find_column_index(old_table,'Date');
 if ~isempty(dateindex_old)
     dates_old=[old_table{2:end,dateindex_old}];
     unique_old_dates=unique(dates_old);
@@ -53,7 +53,7 @@ for c=1:size(sorting_table,2)
     column_name = strrep(sorting_table{1,c},' ','_');
     column_name = strrep(column_name,'?','');
     sorting_table{1,c}=column_name;
-    idx.(column_name)=find_column_index(sorting_table,column_name);
+    idx.(column_name)=DAG_find_column_index(sorting_table,column_name);
 end
 
 n_row=1;
@@ -70,6 +70,7 @@ for s =1:numel(subfolders)
     
     %% take only plx files with a hyphen in their name
 clear file_valid
+file_valid=logical([]);
     for f=1:numel(plxfiles)
         hyphenidx=strfind(plxfiles{f},'-');
         if any(hyphenidx)
@@ -83,6 +84,7 @@ clear file_valid
     
     %% find corresponding block for each plx file
 clear blocks
+blocks=[];
     for f=1:numel(plxfiles)
         startidx=strfind(plxfiles{f},'blocks_')+7;
         hyphenidx=strfind(plxfiles{f}(startidx:end),'-');

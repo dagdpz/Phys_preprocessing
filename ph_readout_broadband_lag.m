@@ -3,9 +3,9 @@ function lag=ph_readout_broadband_lag(table_num,table_string,session,block)
 % DAG_derive_TDT_streamer_broadband_lag)
 
 
-idx_sess=find_column_index(table_string,'Session');
-idx_block=find_column_index(table_string,'Block');
-idx_lag=find_column_index(table_string,'lag_seconds');
+idx_sess=DAG_find_column_index(table_string,'Session');
+idx_block=DAG_find_column_index(table_string,'Block');
+idx_lag=DAG_find_column_index(table_string,'lag_seconds');
 
 
 row_idx=ismember(table_num(:,idx_sess),session) & ismember(table_string(2:end,idx_block),['Block-' num2str(block)]);

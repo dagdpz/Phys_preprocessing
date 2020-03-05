@@ -54,7 +54,7 @@ handles.current_version = '';
 handles.o='Placeholder';
 handles.exit=0;
 guidata(hObject, handles);
-dag_drive_IP=get_dag_drive_IP;
+dag_drive_IP=DAG_get_server_IP;
 DAG_user = getUserName;
 main_folder=['C:\Users\' DAG_user '\Dropbox\DAG\DAG_toolbox\spike_analysis'];
 spk_folder = dir(main_folder);
@@ -78,7 +78,7 @@ varargout{5} = handles.set_parameters_phys_ui;
 display(varargout{1})
 
 function default_Callback(hObject, eventdata, handles)
-text = fileread([fileparts(mfilename('fullpath')) filesep 'set_parameters_phys_DEFAULT.m']);
+text = fileread([fileparts(mfilename('fullpath')) filesep 'PGUI_set_postprocessing_parameters_DEFAULT.m']);
 new_lines = strfind(text, sprintf('\n'));
 text = text(new_lines(1)+1:end);
 set(handles.text_editor,'string',text);
@@ -105,7 +105,7 @@ projects=get(handles.popupmenu1,'String');
 project=get(handles.popupmenu1,'Value');
 handles.current_project=projects{project};
 set(handles.text2,'String',handles.current_project);
-dag_drive_IP=get_dag_drive_IP;
+dag_drive_IP=DAG_get_server_IP;
 DAG_user = getUserName;
 spk_folder = dir(['C:\Users\' DAG_user '\Dropbox\DAG\DAG_toolbox\spike_analysis\' handles.current_project]);
 folders = spk_folder([spk_folder.isdir]);

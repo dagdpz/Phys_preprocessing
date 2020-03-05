@@ -5,7 +5,7 @@ function ph_derive_electrode_depth(monkey)
 % This function should not be necessary any more, it was used to
 % automatically create the first Electrode_depths files.
 
-dbpath=getDropboxPath;
+dbpath=DAG_get_Dropbox_path;
 main_folder=[dbpath filesep 'DAG' filesep 'phys' filesep];
 xcel_table_file=[main_folder monkey '_phys_dpz' filesep monkey(1:3) '_sorted_neurons.xlsx'];
 m_file_name=[main_folder monkey '_phys_dpz' filesep 'Electrode_depths_' monkey(1:3) '.m'];
@@ -14,7 +14,7 @@ xcel_sheet='final_sorting';
 columns_to_find={'Date','Block','Chan','z'};
 
 for cols=columns_to_find
-    idx.(cols{:})=find_column_index(xcel_table,cols{:});
+    idx.(cols{:})=DAG_find_column_index(xcel_table,cols{:});
     all.(cols{:})=xcel_table(:,idx.(cols{:}));
 end
 unique_blocks=unique([[all.Date{2:end}]' [all.Block{2:end}]'],'rows');

@@ -6,7 +6,7 @@ function DAG_derive_TDT_streamer_broadband_lag(monkey)
 
 %monkey='test';
 excel_filename=[monkey '_LFP_BROA_comp'];
-dag_drive=get_dag_drive_IP;
+dag_drive=DAG_get_server_IP;
 raw_analysis_folder=[dag_drive filesep 'data' filesep '_Raw_data_analysis'];
 folder_to_save_figures=[raw_analysis_folder filesep monkey '_broadband_lag_figures'];
 if ~exist(folder_to_save_figures,'dir')

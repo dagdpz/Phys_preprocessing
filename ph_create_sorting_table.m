@@ -1,7 +1,7 @@
 function ph_create_sorting_table(monkey,daterange)
 
 %daterange=[20161001 20161207];
-dag_drive=get_dag_drive_IP;
+dag_drive=DAG_get_server_IP;
 if nargin<1
     monkey='Tesla';
 end
@@ -27,7 +27,7 @@ else
     sorting_table={'Monkey','Session','Date','Run','Block','Chan','z','Unit','N_spk','Neuron_ID','Times_same_unit','Site_ID'};
 end
 old_table=sorting_table;
-dateindex_old=find_column_index(old_table,'Date');
+dateindex_old=DAG_find_column_index(old_table,'Date');
 if ~isempty(dateindex_old)
     dates_old=[old_table{2:end,dateindex_old}];
     unique_old_dates=unique(dates_old);
@@ -42,7 +42,7 @@ for c=1:numel(sorting_table)
     column_name = strrep(sorting_table{c},' ','_');
     column_name = strrep(column_name,'?','');
     sorting_table{c}=column_name;
-    idx.(column_name)=find_column_index(sorting_table,column_name);
+    idx.(column_name)=DAG_find_column_index(sorting_table,column_name);
 end
 old_table(1,:)=sorting_table;
 
