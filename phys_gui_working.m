@@ -297,7 +297,7 @@ if  TODO.CombineTDTandMP % Combine
     %         temp_date_range = temp_date;
     %     end
     PLXVERSION=get(get(handles.uipanel11,'SelectedObject'),'String');
-    ph_combine_MP_and_TDT_data(handles.drive,handles.monkey,temp_date,temp_block,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP)
+    ph_combine_MP_and_TDT_data(handles.drive,handles.monkey,temp_date,temp_block,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP,'DISREGARDSPIKES',TODO.DisregardSpikes)
 end
 if  TODO.CreateExcelEntries % Sorting excel table update
     DAG_update_sorting_table(handles.monkey,temp_date);

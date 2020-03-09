@@ -8,12 +8,6 @@ function TDT_trial_struct_working(data_path,monkey,dates,block,varargin)
 % Danial Arabali & Lukas Schneider
 
 
-preprocessing_settings.LFP_notch_filter1= [49.9 50.1];
-preprocessing_settings.LFP_notch_filter2= [99.9 100.1];
-preprocessing_settings.LFP_HP_filter= 1;
-preprocessing_settings.LFP_LP_bw_filter= 150;
-preprocessing_settings.LFP_LP_median_filter= 250;
-
 %% crate folders
 plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep dates filesep];
 TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep dates filesep block];
@@ -32,6 +26,7 @@ stream_state_info=0; % 1: using the stat stream data, 0: using only epoch stores
 PLXVERSION='';
 PLXEXTENSION='-01';
 DISREGARDLFP=0;
+DISREGARDSPIKES=0;
 for i = 1:2:length(varargin)
     eval([upper(varargin{i}) '=varargin{i+1};']);
     eval(['preprocessing_settings.(upper(varargin{i}))' '=varargin{i+1};']);
@@ -46,6 +41,7 @@ varargin_no_broadband=varargin;
 for i = 1:2:length(varargin_no_broadband)
     if strcmpi(varargin{i},'DONTREAD')
         varargin_no_broadband{i+1}=[varargin_no_broadband{i+1}, 'BROA','Broa'];
+        if DISREGARDSPIKES; varargin_no_broadband{i+1}=[varargin_no_broadband{i+1}, 'eNeu']; end
         varargin_no_broadband{i+1}=unique(varargin_no_broadband{i+1});
     end
 end
@@ -61,7 +57,17 @@ if strcmp(PLXVERSION,'Snippets')
 else
     plxfile=[plxfilefolder dates '_' PLXVERSION '_blocks_' Block_N PLXEXTENSION '.plx'];
 end
+if ~DISREGARDSPIKES
 preprocessing_settings.plxfile=plxfile;
+end
+if ~DISREGARDLFP
+preprocessing_settings.LFP_notch_filter1= [49.9 50.1];
+preprocessing_settings.LFP_notch_filter2= [99.9 100.1];
+preprocessing_settings.LFP_HP_filter= 1;
+preprocessing_settings.LFP_LP_bw_filter= 150;
+preprocessing_settings.LFP_LP_median_filter= 250;
+preprocessing_settings.LFP_from='Broa';
+end
 if exist(plxfile,'file')
     SPK=PLX2SPK(plxfile);            % convert the sorted plexon file into spkobj-format; merge the new sorted waveforms with the old SPKOBJ to geht thresholds and noiselevels as well.
     %backscaling (see DAG_create_PLX)
@@ -182,7 +188,6 @@ end
 stream_fieldnames=fieldnames(datainfo.stores);
 BB_index=ismember(stream_fieldnames,{'BROA','Broa'});
 LFP_index=ismember(stream_fieldnames,{'LFPx'});
-preprocessing_settings.LFP_from='Broa';
 % don't consider broadband if its sampling rate is below 5000 Hz
 if ~any(BB_index) || datainfo.stores.(stream_fieldnames{BB_index}).fs<5000
     stream_fieldnames(BB_index)=[];
@@ -350,6 +355,7 @@ for r=1:numel(unique_runs)          % looping through runs
         TDT_trial_temp(TDT_DATA.Trial(tr).trial) = TDT_DATA.Trial(tr); % This is temp, because we potentially overwrite the file we load!!!
     end
     First_trial_INI_temp=First_trial_INI;
+    preprocessing_settings_temp=preprocessing_settings;
     
     filename=[temp_raw_folder, filesep, monkey(1:3), 'TDT', dates(1:4), '-', dates(5:6), '-', dates(7:8), '_', sprintf('%02d',run) ];
     Validtrials=find(~arrayfun(@(x) isempty(x.trial),TDT_trial_temp));
@@ -368,9 +374,26 @@ for r=1:numel(unique_runs)          % looping through runs
             end
             
         elseif isfield(TDT_trial_temp,'LFPx') && ~isfield(TDT_trial,'LFPx')
+             % this is only here so that structures have the same
+             % fieldnames in the end
             for vt=Validtrials % really, a loop is needed for this?
                 TDT_trial(vt).LFPx=TDT_trial_temp(vt).LFPx;
                 TDT_trial(vt).LFPx_samplingrate=TDT_trial_temp(vt).LFPx_samplingrate;
+            end
+        end
+        if DISREGARDSPIKES && isfield(TDT_trial,'eNeu_t')
+            % take over spikes from the file that is already saved 
+            for vt=Validtrials % really, a loop is needed for this?
+                TDT_trial_temp(vt).eNeu_t=TDT_trial(vt).eNeu_t;
+                TDT_trial_temp(vt).eNeu_w=TDT_trial(vt).eNeu_w;
+            end
+            
+        elseif isfield(TDT_trial_temp,'eNeu_t') && ~isfield(TDT_trial,'eNeu_t')
+             % this is only here so that structures have the same
+             % fieldnames in the end
+            for vt=Validtrials % really, a loop is needed for this?
+                TDT_trial(vt).eNeu_t=TDT_trial_temp(vt).eNeu_t;
+                TDT_trial(vt).eNeu_w=TDT_trial_temp(vt).eNeu_w;
             end
         end
         TDT_trial=orderfields(TDT_trial);
@@ -378,6 +401,10 @@ for r=1:numel(unique_runs)          % looping through runs
     TDT_trial_temp=orderfields(TDT_trial_temp);
     TDT_trial(Validtrials)=TDT_trial_temp(Validtrials);
     First_trial_INI=First_trial_INI_temp;
+    pp_fns=fieldnames(preprocessing_settings_temp); % save only really used preprocessing settings
+    for f=1:numel(pp_fns)
+        preprocessing_settings.(pp_fns{f})=preprocessing_settings.(pp_fns{f});
+    end
     save(filename,'TDT_trial','First_trial_INI','preprocessing_settings')
     %save([mainraw_folder filesep dates '_settings'],'preprocessing_settings');
 end

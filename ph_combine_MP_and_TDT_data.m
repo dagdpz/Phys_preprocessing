@@ -22,6 +22,7 @@ CHANNELS                    = 1:48; %filter for signals
 STREAMSWITHLIMITEDCHANNELS  = {'LFPx','Broa','BROA','pNeu'}; %filtered signals (only the part of the signal in the channel defined as filter will be read)
 SORTNAME                    = 'Plexsormanually';
 DISREGARDLFP                = 0;
+DISREGARDSPIKES             = 0;
 PLXVERSION                  = ''; % plexon file version used, overwrites other sort codes.
 % Options: 'none': all sortcodes are 0 ''
 % 'Snippets': taking sortcodes from SORTNAME,i.e. 'Plexsormanually';
@@ -83,7 +84,6 @@ for fol=1:numel(session_folders)
     else
         blocks_string={block_folders.name}';
     end
-    xlswrite([TDT_data_path date filesep monkey(1:3) '_plx_files.xlsx'],plx_file_table,'list_of_used_plx_files');
     
     for i=1:numel(blocks_string);
         block = blocks_string{i};
@@ -94,7 +94,7 @@ for fol=1:numel(session_folders)
             disp('More than one sortcode entry, skipping')
             plx_file_idx=find(plx_file_idx,'first');
         end
-        if ~any(plx_file_idx) % to make sure it also runs without associated plx files
+        if ~any(plx_file_idx) || DISREGARDSPIKES % to make sure it also runs without associated plx files
             PLXVERSION='none';
             PLXEXTENSION='-00';
         else
@@ -104,9 +104,10 @@ for fol=1:numel(session_folders)
         
         
         TDT_trial_struct_input      = {'SORTNAME',SORTNAME,'DONTREAD',DONTREAD,'EXCLUSIVELYREAD',EXCLUSIVELYREAD,'CHANNELS',CHANNELS,...
-            'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'PLXEXTENSION',PLXEXTENSION,'DISREGARDLFP',DISREGARDLFP};
+            'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'PLXEXTENSION',PLXEXTENSION,'DISREGARDLFP',DISREGARDLFP,'DISREGARDSPIKES',DISREGARDSPIKES};
         TDT_trial_struct_working(base_path,[monkey '_phys'],date,block,TDT_trial_struct_input{:})
     end
+    xlswrite([TDT_data_path date filesep monkey(1:3) '_plx_files.xlsx'],plx_file_table,'list_of_used_plx_files');
 end
 
 if exist(Combined_data_path)~=7

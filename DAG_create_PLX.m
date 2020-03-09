@@ -71,7 +71,9 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
 %     handles.main_folder=[drive 'Data\TDTtanks' filesep monkey filesep num2str(Session_as_num) filesep];
 %     handles.WC_concatenation_folder=[handles.main_folder 'WC' filesep];
     blocks_in_this_session=[block{cell2mat(Session)==Session_as_num}];
+    temp_handles=handles;
     load([handles.WC_concatenation_folder 'concatenation_info'])
+    handles=temp_handles;
     handles.sr=sr;
     for b=blocks_in_this_session
         recname=['blocks_' num2str(b)];
