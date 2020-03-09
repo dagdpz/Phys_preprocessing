@@ -300,7 +300,7 @@ if  TODO.CombineTDTandMP % Combine
     ph_combine_MP_and_TDT_data(handles.drive,handles.monkey,temp_date,temp_block,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP,'DISREGARDSPIKES',TODO.DisregardSpikes)
 end
 if  TODO.CreateExcelEntries % Sorting excel table update
-    DAG_update_sorting_table(handles.monkey,temp_date);
+    DAG_update_sorting_table(handles.monkey_phys,temp_date);
 end
 set(Button_run,'str','RUN','backg',col_button)  % Now reset the button features.
 
