@@ -55,12 +55,12 @@ old_table(1,:)=sorting_table;
 %% load same cells
 %% nonmatching channels for same cells would lead to an error
 clear Session channel blocks sortcodes
-run([dropboxpath  filesep 'Same_cells_' monkey(1:3)]);
+run([DBfolder  filesep 'Same_cells_' monkey(1:3)]);
 Same_cells=struct('Session',Session,'channel',channel,'blocks',blocks,'sortcodes',sortcodes,'Neuron_ID',cell(size(Session)));
 
 %% load electrode depths
 clear Session block channels z
-run([dropboxpath  filesep 'Electrode_depths_' monkey(1:3)]);
+run([DBfolder  filesep 'Electrode_depths_' monkey(1:3)]);
 Electrode_depths=struct('Session',Session,'block',block,'channels',channels,'z',z);
 
 %% Check for apparent mistakes (nonmatching channels for same cells would lea)
