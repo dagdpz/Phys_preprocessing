@@ -5,7 +5,7 @@ clean_data=0;
 dag_drive_IP=DAG_get_server_IP;
 DAG_user=getUserName;
 
-protocolpath=['C' ':' filesep 'Users' filesep DAG_user filesep 'Dropbox' filesep 'DAG' filesep 'phys' filesep monkey '_dpz']
+protocolpath=['C' ':' filesep 'Users' filesep DAG_user filesep 'Dropbox' filesep 'DAG' filesep 'phys' filesep monkey '_dpz'];
 % C:\Users\a.doming\Dropbox\DAG\phys\Linus_phys_dpz
 
 if exist(protocolpath)~=7
@@ -24,7 +24,7 @@ end
 files_for_input=file_as_i_want_it_cell(1:size(file_as_i_want_it_cell,1),1:2);
 
 if clean_data
-    monkeypsych_clean_data(folder_with_session_days,dates)
+    MPA_clean_data(folder_with_session_days,dates)
 end
 
 Sel_all={'display',0,'runs_as_batches',1};
