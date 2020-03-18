@@ -157,7 +157,7 @@ blocks=[];
     end
 end
 
-[complete_mastertable]=DAG_update_cell_table(sorting_table,old_table,'Date');
+[complete_mastertable]=DAG_update_cell_table(old_table,sorting_table,'Date');
 xlswrite([DBfolder filesep monkey(1:3) '_plx_files.xlsx'],complete_mastertable,'list_of_used_plx_files');
 end
 
