@@ -1,4 +1,4 @@
-function ph_combine_MP_and_TDT_data(drive,monkey,dates,blocks,varargin)
+function ph_combine_MP_and_TDT_data(handles,dates,blocks)
 
 % ph_combine_MP_and_TDT_data('L','Linus_phys',[20150508 20150525],[])
 % Converts TDT data into trial structure format (using TDT_trial_struct_working)
@@ -15,15 +15,18 @@ function ph_combine_MP_and_TDT_data(drive,monkey,dates,blocks,varargin)
 %
 % ??        'Tick'
 % % % % % % % % % % % % % % % %
+drive=handles.drive;
+monkey=handles.monkey;
+monkey_phys=handles.monkey_phys;
+DISREGARDLFP                = handles.TODO.DisregardLFP;
+DISREGARDSPIKES             = handles.TODO.DisregardSpikes;
+%varargin={'PLXVERSION',handles.TDT.PLXVERSION,'DISREGARDLFP',handles.TODO.DisregardLFP,'DISREGARDSPIKES',Thandles.ODO.DisregardSpikes};
 
 DONTREAD                    = {'pNeu','LED1','trig'}; %priority over ExclusivelyRead % 'BROA','Broa' (add these if you want to use online filtered LFP)
 EXCLUSIVELYREAD             = {}; %(empty read everything)
-CHANNELS                    = 1:48; %filter for signals
+CHANNELS                    = 1:128; %filter for signals
 STREAMSWITHLIMITEDCHANNELS  = {'LFPx','Broa','BROA','pNeu'}; %filtered signals (only the part of the signal in the channel defined as filter will be read)
 SORTNAME                    = 'Plexsormanually';
-DISREGARDLFP                = 0;
-DISREGARDSPIKES             = 0;
-PLXVERSION                  = ''; % plexon file version used, overwrites other sort codes.
 % Options: 'none': all sortcodes are 0 ''
 % 'Snippets': taking sortcodes from SORTNAME,i.e. 'Plexsormanually';
 % 'realigned': taking sortcodes from realigned (and potentially re-sorted) PLX file
@@ -44,19 +47,20 @@ TDT_data_path               = strcat(base_path ,monkey, '_phys_mat_from_TDT', fi
 MP_data_path                = strcat(base_path ,monkey, filesep);
 
 %% get plx_file_table_to use
-[~, ~, plx_file_table]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'list_of_used_plx_files');
-for c=1:size(plx_file_table,2)
-    column_name = strrep(plx_file_table{1,c},' ','_');
+[~, ~, plx_file_table_to_use]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'to_use');
+[~, ~, plx_file_table_in_use]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'in_use');
+for c=1:size(plx_file_table_to_use,2)
+    column_name = strrep(plx_file_table_to_use{1,c},' ','_');
     column_name = strrep(column_name,'?','');
-    plx_file_table{1,c}=column_name;
-    idx.(column_name)=DAG_find_column_index(plx_file_table,column_name);
+    plx_file_table_to_use{1,c}=column_name;
+    idx.(column_name)=DAG_find_column_index(plx_file_table_to_use,column_name);
 end
-
-% upper might interfere here, but we are not really using variable
-% inputs anyway at this stage
-for i = 1:2:length(varargin)
-    eval([upper(varargin{i}) '=varargin{i+1};']);
-end
+settings=ph_get_preprocessing_settings(monkey_phys,'executed');
+% % upper might interfere here, but we are not really using variable
+% % inputs anyway at this stage
+% for i = 1:2:length(varargin)
+%     eval([upper(varargin{i}) '=varargin{i+1};']);
+% end
 if DISREGARDLFP
     DONTREAD=[DONTREAD, {'BROA','Broa','LFPx'}];
     DONTREAD=unique(DONTREAD);
@@ -89,7 +93,7 @@ for fol=1:numel(session_folders)
         block = blocks_string{i};
         block_num=str2num(block(findstr(block,'-')+1:end));
         
-        plx_file_idx=[false, [plx_file_table{2:end,idx.Date}]==date_num] & [false, [plx_file_table{2:end,idx.Block}]==block_num];
+        plx_file_idx=[false, [plx_file_table_to_use{2:end,idx.Date}]==date_num] & [false, [plx_file_table_to_use{2:end,idx.Block}]==block_num];
         if sum(plx_file_idx)>1
             disp('More than one sortcode entry, skipping')
             plx_file_idx=find(plx_file_idx,'first');
@@ -98,16 +102,39 @@ for fol=1:numel(session_folders)
             PLXVERSION='none';
             PLXEXTENSION='-00';
         else
-            PLXVERSION=plx_file_table{plx_file_idx,idx.Sorttype};
-            PLXEXTENSION=sprintf('-%02d',plx_file_table{plx_file_idx,idx.Plx_file_extension});
+            PLXVERSION=plx_file_table_to_use{plx_file_idx,idx.Sorttype};
+            PLXEXTENSION=sprintf('-%02d',plx_file_table_to_use{plx_file_idx,idx.Plx_file_extension});
         end
-        
-        
+        %% WC settings saved here as well, from ALL_preprocessing_logs history
+        substruct=[PLXVERSION '_blocks_' num2str(block_num) '_sortcode_' PLXEXTENSION(2:end)];
+        if isfield(settings,[monkey(1:3) '_' date]) && isfield(settings.([monkey(1:3) '_' date]),'WC_per_sortcode') ...
+                && isfield(settings.([monkey(1:3) '_' date]).WC_per_sortcode, substruct)
+            spike_settings=settings.([monkey(1:3) '_' date]).WC_per_sortcode.(substruct);
+        else
+            spike_settings=struct;
+        end
         TDT_trial_struct_input      = {'SORTNAME',SORTNAME,'DONTREAD',DONTREAD,'EXCLUSIVELYREAD',EXCLUSIVELYREAD,'CHANNELS',CHANNELS,...
             'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'PLXEXTENSION',PLXEXTENSION,'DISREGARDLFP',DISREGARDLFP,'DISREGARDSPIKES',DISREGARDSPIKES};
-        TDT_trial_struct_working(base_path,[monkey '_phys'],date,block,TDT_trial_struct_input{:})
+        %TDT_trial_struct(base_path,[monkey '_phys'],date,block,spike_settings,TDT_trial_struct_input{:})
+         TDT_trial_struct(handles,date,block,spike_settings,TDT_trial_struct_input{:})
+       
+        %% storing used sortcode information in plx table
+        tmp_plx_file_table=plx_file_table_to_use(1,:);
+        tmp_plx_file_table{2,idx.Monkey}=monkey(1:3);
+        tmp_plx_file_table{2,idx.Date}=date_num;
+        tmp_plx_file_table{2,idx.Block}=block_num;
+        tmp_plx_file_table{2,idx.Sorttype}=PLXVERSION;
+        tmp_plx_file_table{2,idx.Plx_file_extension}=PLXEXTENSION;
+        tmp_plx_file_idx=[false, [plx_file_table_in_use{2:end,idx.Date}]==date_num] & [false, [plx_file_table_in_use{2:end,idx.Block}]==block_num];
+        if DISREGARDSPIKES && any(plx_file_idx) 
+            tmp_plx_file_table{2,idx.Sorttype}              =plx_file_table_in_use{tmp_plx_file_idx,idx.Sorttype};
+            tmp_plx_file_table{2,idx.Plx_file_extension}    =plx_file_table_in_use{tmp_plx_file_idx,idx.Plx_file_extension};
+        end
     end
-    xlswrite([TDT_data_path date filesep monkey(1:3) '_plx_files.xlsx'],plx_file_table,'list_of_used_plx_files');
+    xlswrite([TDT_data_path date filesep monkey(1:3) '_plx_files.xlsx'],plx_file_table_to_use,'list_of_used_plx_files');
+    
+[plx_file_table_in_use]=DAG_update_cell_table(plx_file_table_in_use,tmp_plx_file_table,'Date');
+xlswrite([DBfolder  monkey(1:3) '_plx_files.xlsx'],plx_file_table_in_use,'in_use');
 end
 
 if exist(Combined_data_path)~=7
@@ -123,7 +150,9 @@ for l=1:n_MP
 end
 folders_to_create=unique(filelist_session_MP(matching_TDT_MP_session_runs,1));
 for idx_match   = 1:numel(folders_to_create)
+    if ~exist([Combined_data_path folders_to_create{idx_match}],'dir')
     mkdir(Combined_data_path,folders_to_create{idx_match});
+    end
 end
 folders_to_combine=unique(filelist_formatted_MP(matching_TDT_MP_session_runs));
 
@@ -162,7 +191,7 @@ for idx_c       = 1:numel(folders_to_combine)
                 end
                 current_file_path=[Combined_data_path  individual_day_folder_MP(end-7:end) filesep current_file(1:3) 'combined' current_file(4:end-4), '_block_', sprintf('%02d',block), '.mat'];
                 disp(['saving ' current_file_path])
-                save(current_file_path,'task','trial','SETTINGS','First_trial_INI')
+                save(current_file_path,'task','trial','preprocessing_settings','SETTINGS','First_trial_INI')
             end
         end
     end

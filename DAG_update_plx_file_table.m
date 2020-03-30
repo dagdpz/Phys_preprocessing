@@ -1,4 +1,4 @@
-function DAG_update_plx_file_table(monkey,dates,options)
+function DAG_update_plx_file_table(dates,handles)
 % INPUT: update_sorting_table('Flaffus',{'20160608','20160609'})
 % automatically updates 'Fla_sorted_neurons.xlsx' in the corresponding dropbox path
 % note that this function takes information from the "final_sorting" sheet,
@@ -9,10 +9,10 @@ function DAG_update_plx_file_table(monkey,dates,options)
 % Before the automatic information can be processed further, the user is
 % asked to copy the "automatic sorting" sheet to "final sorting", to make
 % sure no valuable information is lost in the automatic process
-
-if nargin<3
-    options.preferred_SortType='Snippets';
-    options.preferred_Plx_file_extension='first';
+monkey=handles.monkey_phys;
+if nargin<2
+    handles.preferred_SortType='Snippets';
+    handles.preferred_Plx_file_extension='first';
 end
 dag_drive=DAG_get_server_IP;
 
@@ -32,8 +32,8 @@ sheets_available={};
 if exist([DBfolder  monkey(1:3) '_plx_files.xlsx'],'file')
     [~, sheets_available]=xlsfinfo([DBfolder  monkey(1:3) '_plx_files.xlsx']);
 end
-if ismember('list_of_used_plx_files',sheets_available)
-    [~, ~, sorting_table]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'list_of_used_plx_files');
+if ismember('to_use',sheets_available)
+    [~, ~, sorting_table]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'to_use');
 else
     sorting_table={'Monkey','Date','Block','Sorttype','Plx_file_extension'};
 end
@@ -103,13 +103,13 @@ blocks=[];
         is_realigned=cellfun(@(x) ~isempty(strfind(x,[date '_realigned_blocks'])),blockfiles);
         
         %% only include preferred SortType if present
-        if strcmp(options.preferred_SortType,'Snippets') && any(issnippet)
+        if strcmp(handles.preferred_SortType,'Snippets') && any(issnippet)
             blockfiles=blockfiles(issnippet);
             blockdates=blockdates(issnippet);
-        elseif strcmp(options.preferred_SortType,'realigned') && any(is_realigned)
+        elseif strcmp(handles.preferred_SortType,'realigned') && any(is_realigned)
             blockfiles=blockfiles(is_realigned);
             blockdates=blockdates(is_realigned);
-        elseif strcmp(options.preferred_SortType,'from_BB') && any(is_WC)
+        elseif strcmp(handles.preferred_SortType,'from_BB') && any(is_WC)
             blockfiles=blockfiles(is_WC);
             blockdates=blockdates(is_WC);
         end
@@ -121,11 +121,11 @@ blocks=[];
         end
         
         %% selected desired extension
-        if strcmp(options.preferred_Plx_file_extension,'first')
+        if strcmp(handles.preferred_Plx_file_extension,'first')
             [~,x]=min(block_plx_extensions);
-        elseif strcmp(options.preferred_Plx_file_extension,'last')
+        elseif strcmp(handles.preferred_Plx_file_extension,'last')
             [~,x]=max(block_plx_extensions);
-        elseif strcmp(options.preferred_Plx_file_extension,'latest')
+        elseif strcmp(handles.preferred_Plx_file_extension,'latest')
             [~,x]=max(blockdates);
         end
         
@@ -158,6 +158,6 @@ blocks=[];
 end
 
 [complete_mastertable]=DAG_update_cell_table(old_table,sorting_table,'Date');
-xlswrite([DBfolder filesep monkey(1:3) '_plx_files.xlsx'],complete_mastertable,'list_of_used_plx_files');
+xlswrite([DBfolder filesep monkey(1:3) '_plx_files.xlsx'],complete_mastertable,'to_use');
 end
 

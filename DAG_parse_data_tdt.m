@@ -1,5 +1,6 @@
-function DAG_parse_data_tdt(handles, input_stream, limit_to_channels,lag)
+function DAG_parse_data_tdt(handles, input_stream, lag)
 %This code required OpenDeveloper (Tucker-Davis Technologies)
+limit_to_channels=handles.channels_to_process;
 Block=handles.block_path;
 folder = fileparts(Block);
 
@@ -34,7 +35,7 @@ end
 if ~isstr(limit_to_channels) && ~all(isnan(limit_to_channels)) && ~isempty(limit_to_channels)
     channels=channels(ismember(channels,limit_to_channels));
 end
-fprintf('%d channels in the block\n', numel(channels))
+fprintf('Parsing %d channels in the block (found in Electrode_depths)\n', numel(channels))
 
 for ch = channels
     fout = fopen([handles.WC_block_folder Block '_' num2str(ch) '.tdtch'],'w','l');

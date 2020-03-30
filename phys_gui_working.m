@@ -1,6 +1,6 @@
 function phys_gui_working(varargin)
 
-% Last Modified by GUIDE v2.5 27-Feb-2020 15:52:57
+% Last Modified by GUIDE v2.5 19-Mar-2020 11:35:57
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -108,8 +108,8 @@ if ischar(handles.fout)
             to_use_ru(hh,:) = str2num(combined_files{hh}(bl_i(1)-2:end-13));
         end
         
-        temp_date=repmat(temp.date(i),length(to_use_ru),1);
-        temp_list{i}=[temp_date to_use_ru];
+        dates_to_loop=repmat(temp.date(i),length(to_use_ru),1);
+        temp_list{i}=[dates_to_loop to_use_ru];
     end
     filekeys=num2cell(vertcat(temp_list{:}));
     
@@ -134,9 +134,9 @@ col_button = get(Button_run,'backg');  % Get the background color of the figure.
 set(Button_run,'str','RUNNING...','backg',[1 .6 .6]) % Change color of button.
 
 pause(.01)  % FLUSH the event queue, drawnow would work too.
-% temp_date=get(handles.listbox1,'String');
-% temp_date= str2num(cell2mat(temp_date));
-% temp_date=sort(temp_date);
+% dates_to_loop=get(handles.listbox1,'String');
+% dates_to_loop= str2num(cell2mat(dates_to_loop));
+% dates_to_loop=sort(dates_to_loop);
 % temp_block=get(handles.listbox2,'String');
 
 %if get(handles.checkbox101,'Value')
@@ -150,11 +150,9 @@ Button_run = hObject; % Get the caller's handle.
 col_button = get(Button_run,'backg');  % Get the background color of the figure.
 set(Button_run,'str','RUNNING...','backg',[1 .6 .6]) % Change color of button.
 pause(.01)  % FLUSH the event queue, drawnow would work too.
-temp_date=get(handles.listbox1,'String');
-temp_date= str2num(cell2mat(temp_date));
-temp_date=sort(temp_date);
-%temp_block=num2cell(get(handles.listbox2,'String'));
 
+handles.sessions=get(handles.listbox1,'String');
+handles.dates= sort(str2num(cell2mat(handles.sessions)));
 %% transform checkbox tags to fieldnames
 handle_fn=fieldnames(handles);
 to_check=handle_fn(cellfun(@(x) ~isempty(strfind(x,'checkbox')),handle_fn));
@@ -162,146 +160,106 @@ for ck=1:numel(to_check)
     val=get(handles.(to_check{ck}),'Value');
     fn=get(handles.(to_check{ck}),'String');
     fn=strrep(fn,' ','_');
-    TODO.(fn)= val;
+    handles.TODO.(fn)= val;
 end
-%% transform checkbox tags to fieldnames
-todo_fn=fieldnames(TODO);
-PLX_creation_fn=todo_fn(cellfun(@(x) ~isempty(strfind(x,'PLXFrom')),todo_fn));
-for ck=1:numel(PLX_creation_fn)
-    PLX_creation{ck,1}=PLX_creation_fn{ck};
-    PLX_creation{ck,2}=TODO.(PLX_creation_fn{ck});
-end
-
-%% TODO
-if TODO.SynapseTankToOldFormat
-    if numel(temp_date)>1
-        temp_date_range = [min(temp_date) max(temp_date)];
-    else
-        temp_date_range = temp_date;
-    end
-    temp_date = DAG_rename_TDT_tank(handles.drive,handles.monkey_phys,temp_date_range);
-end
-
-
-
-% TODO.TDTSnippetsSortcodeFromPLX ?
-
-
-if any([PLX_creation{:,2}]) || TODO.WCFromBB
-    tank_path = [handles.drive];
-    for i=1:numel(temp_date)
-        clear tank_b_names
-%         if isempty(temp_block)
-            temp_block = [];
-            tank_path_pre = [handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey_phys filesep num2str(temp_date(i)) filesep temp_block];
-            tank_dir=dir(tank_path_pre);
-            jj=1;
-            for j=1:size(tank_dir,1)
-                if findstr(tank_dir(j).name, 'Block') == 1
-                    tank_b_names{:,jj}=tank_dir(j).name;
-                    jj=jj+1;
-                end
-            end
-% %         else
-%             
-%             tank_path_pre = [handles.drive 'Data' filesep 'TDTtanks' filesep handles.monkey_phys filesep num2str(temp_date(i)) filesep ];
-%             tank_dir=dir(tank_path_pre);
-%             jj=1;
-%             for j=1:size(tank_dir,1)
-%                 for hh=1:size(temp_block,1)
-%                     if ~isempty(temp_block{hh}) && findstr(tank_dir(j).name, ['Block-' num2str(temp_block{hh})]) == 1
-%                         tank_b_names{:,jj}=tank_dir(j).name;
-%                         jj=jj+1;
-%                     end
-%                 end
-%             end
-%             
-%         %end
-        
-        if TODO.WCFromBB
-            
-            handles.threshold =get(handles.edit10,'String');
-            handles.par.StdThrSU = str2double(get(handles.edit11,'String'));
-            handles.par.StdThrMU = str2double(get(handles.edit20,'String'));
-            handles.hp =get(handles.edit12,'String');
-            handles.hpcutoff =str2double(get(handles.edit13,'String'));
-            handles.lpcutoff =str2double(get(handles.edit14,'String'));
-            handles.cell_tracking_distance_limit=str2double(get(handles.edit15,'String'));
-            handles.remove_ini=str2double(get(handles.edit16,'String'));
-            
-            
-            DAG_WC3_preprocessing(temp_date(i),tank_b_names,handles)
-        end
-        
-        PLX_versions_to_create=find([PLX_creation{:,2}]);
-        for v=PLX_versions_to_create
-            DAG_create_PLX(temp_date(i),handles.monkey_phys,tank_b_names,PLX_creation{v,1})
-        end
-    end
-end
-
-
-if TODO.Assign_WC_waveforms_to_PLX
-    % Kind of complicated scripting for just looping through all selected
-    % sessions/blocks, but this is only temporary anyway
-    TDT_prefolder_dir           = [handles.drive 'Data' filesep 'Sortcodes' filesep handles.monkey_phys];
+if handles.TODO.WCFromBB
+    %% defaults
+    handles.RAM = 24;   % SYSTEM MEMORY in GB
+    handles.dtyperead = 'single';         % Data TYPE                                          % Default for BR, TD
+    handles.dtypewrite = handles.dtyperead;
     
-    dir_folder_with_session_days=dir(TDT_prefolder_dir); % dir
-    session_folders=[];
-    ctr=1;
-    for k=1: length(dir_folder_with_session_days)
-        X=str2double(dir_folder_with_session_days(k).name);
-        if ismember(X,temp_date) %X==dates(1) ||  ( X<=  dates(2) && X >  dates(1))
-            session_folders{ctr}= dir_folder_with_session_days(k).name;
-            ctr=ctr+1;
-        end
-    end
-    for fol=1:numel(session_folders)
-        date=session_folders{fol};
-        block_folders              = dir([TDT_prefolder_dir filesep date filesep 'Block-*']);
-        block_folders              = block_folders([block_folders.isdir]);
-        if ~isempty(temp_block)
-            for b=1:numel(temp_block)
-                blocks_string(b,:)={['Block-' num2str(blocks(b))]};
-            end
-        else
-            blocks_string={block_folders.name}';
-        end
-        for i=1:numel(blocks_string);
-            block = blocks_string{i};
-            block = block(strfind(block,'-')+1:end);
-            waveform_PLX_file=[TDT_prefolder_dir filesep date filesep date '_from_BB_' 'blocks_' block '.plx'];
-            sortcode_PLX_file=[TDT_prefolder_dir filesep date filesep date '_from_BB_' 'blocks_' block '-01' '.plx'];
-            DAG_take_over_waveforms_PLX2PLX(waveform_PLX_file,sortcode_PLX_file)
-        end
-    end
+    %FOR?
+    handles.sys = 'TD'; % RECORDING SYSTEM
+    handles.rawname = '*.tdtch';% RAW DATAFILES NAME
+    handles.blockfile=0; % ????
+    
+    % % ARRAY CONFIGURATION -> relevant for arraynoisecancellation
+    % handles.numArray = 6;
+    % handles.numchan = 64;                                                       % Channels per Array
+    % handles.arraynoisecancelation = 0;
+    %
+    % FILTERING: LINE NOISE
+    handles.WC.linenoisecancelation = 0;                                           % 1 for yes; 0 for no
+    handles.WC.linenoisefrequ = 50;
+    handles.WC.transform_factor = 0.25;                                        % microVolts per bit for higher accuracy when saved as int16 after filtering; Default for BR
+    handles.WC.iniartremovel = 1;               % first 40 samples
+    % % handles.drinkingartremoval = 1;
+    
+    % DETECTION
+    % handles.WC.w_pre = 20;
+    % handles.WC.w_post = 44;
+    handles.WC.w_pre = 10;
+    handles.WC.w_post = 22;
+    handles.WC.ref = 0.001;
+    handles.WC.int_factor = 2;
+    handles.WC.interpolation ='y';
+    handles.WC.stdmax = 100;
+    
+    
+    % FEATURE SELECTION
+    %handles.WC.features = 'wavpcarawderiv';    %choice of spike features: wav: wavelet decomposition; pca: principle component analyses; raw: raw waveforms; deriv: first derivative of the raw waveforms
+    handles.WC.features = 'wavpcaraw';
+    handles.WC.wavelet='haar';                 %choice of wavelet family for wavelet features
+    handles.WC.exclusioncrit = 'thr';          % this part is weird to me as well, 
+    handles.WC.exclusionthr = 0.8;             % features are excluded, until no feature pairs are correlated more than exclusionthr  %def R^2 = 0.80
+    handles.WC.maxinputs = 11;   %15 %17, 15              %number of inputs to the clustering def. 11
+    handles.WC.scales = 4;                     %scales for wavelet decomposition
+    
+    
+    % CLUSTERING - first 4 dont make sense, one is not needed
+    handles.WC.num_temp = 18;                  %number of temperatures; def 25
+    handles.WC.mintemp = 0;                    %minimum temperature
+    handles.WC.maxtemp = 0.18;                 %maximum temperature def 0.25
+    handles.WC.tempstep = 0.01;                %temperature step
+    
+    handles.WC.SWCycles = 100;  % def. 1000    %number of montecarlo iterations
+    handles.WC.KNearNeighb = 11;               %number of nearest neighbors
+    
+    %handles.WC.chunk=5;                        %length of pieces into which file has to be splitted
+    handles.WC.max_spikes2cluster = 40000;     % maximum number of spikes to cluster, if more take only this amount of randomly chosen spikes, others are set into cluster 0
+    % check! should be: %maximum
+    % number of spikes used for
+    % clustering, rest is forced by
+    % `????
+    % handles.stab = 0.8;                      %stability condition for selecting the temperature
+    
+    %For clustering, clear definition difficult
+    handles.WC.min_clus_abs = 10;
+    handles.WC.min_clus_rel = 0.005;          %Default: 0.005% alternative: 0.0035
+    handles.WC.max_nrclasses = 8;
+    handles.WC.template_sdnum = 5;             % max radius of cluster in std devs. for classifying rest
+    
+        handles.WC.classify_space='spikeshapesfeatures'; %% for classifying rest only?
+        handles.WC.classify_method= 'linear'; %% for classifying rest only?
+        
+    % PLOTTING
+    handles.WC.temp_plot = 'log';              % temperature plot in log scale
+    handles.WC.max_spikes2plot = 1000;         %maximum number of spikes to plot.
+    handles.WC.max_nrclasses2plot = 8;
+    
+    
+    %% inputs
+    handles.WC.threshold =get(handles.edit10,'String');
+    handles.WC.StdThrSU = str2double(get(handles.edit11,'String'));
+    handles.WC.StdThrMU = str2double(get(handles.edit20,'String'));
+    handles.WC.hp =get(handles.edit12,'String');
+    handles.WC.hpcutoff =str2double(get(handles.edit13,'String'));
+    handles.WC.lpcutoff =str2double(get(handles.edit14,'String'));
+    handles.WC.cell_tracking_distance_limit=str2double(get(handles.edit15,'String'));
+    handles.WC.remove_ini=str2double(get(handles.edit16,'String'));
 end
-
-
-if  TODO.UpdateSortcodeExcel % Combine
-    options.preferred_SortType=get(get(handles.uipanel10,'SelectedObject'),'String');
-    options.preferred_Plx_file_extension=get(get(handles.uipanel11,'SelectedObject'),'String');
-    DAG_update_plx_file_table(handles.monkey_phys,temp_date,options)
+if  handles.TODO.CombineTDTandMP
+    handles.LFP.notch_filter1 = str2num(get(handles.edit22,'String'));
+    handles.LFP.notch_filter2 = str2num(get(handles.edit23,'String'));
+    handles.LFP.HP_filter     = str2double(get(handles.edit24,'String'));
+    handles.LFP.LP_bw_filter  = str2double(get(handles.edit26,'String'));
+    handles.LFP.LP_med_filter = str2double(get(handles.edit25,'String'));
 end
-
-if  TODO.CombineTDTandMP % Combine
-    temp_block=[];
-    if isempty(temp_block)
-        temp_block=[];
-    else
-        temp_block= str2num(cell2mat(temp_block));
-    end
-    %     if numel(temp_date)>1
-    %         temp_date_range = [min(temp_date) max(temp_date)];
-    %     else
-    %         temp_date_range = temp_date;
-    %     end
-    PLXVERSION=get(get(handles.uipanel11,'SelectedObject'),'String');
-    ph_combine_MP_and_TDT_data(handles.drive,handles.monkey,temp_date,temp_block,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP,'DISREGARDSPIKES',TODO.DisregardSpikes)
+if  handles.TODO.UpdateSortcodeExcel % Combine
+    handles.preferred_SortType=get(get(handles.uipanel10,'SelectedObject'),'String');
+    handles.preferred_Plx_file_extension=get(get(handles.uipanel11,'SelectedObject'),'String');
 end
-if  TODO.CreateExcelEntries % Sorting excel table update
-    DAG_update_sorting_table(handles.monkey_phys,temp_date);
-end
+phys_gui_execute(handles)
 set(Button_run,'str','RUN','backg',col_button)  % Now reset the button features.
 
 %% Checkboxes
@@ -372,11 +330,11 @@ current_string_o=get(handles.text22,'String');
 current_string=cellstr(current_string_o);
 tags=get(handles.text22,'tag');
 % if ischar(tags) && strcmp(tags,'text22')
-%    tags=''; 
+%    tags='';
 % end
 if isempty(current_string_o);
     current_string={string};
-    tags=num2str(n); 
+    tags=num2str(n);
     tags_num=n;
 else
     instringposition=ismember(current_string,string);
@@ -458,11 +416,11 @@ function pushbutton12_Callback(hObject, eventdata, handles)
 handles.date_to_delete=get(handles.listbox1,{'String','Value'});
 if ~isempty(handles.date_to_delete{1})
     handles.date_to_delete{1}(handles.date_to_delete{2}(:)) = [];  % Delete the selected strings.
-    set(handles.listbox1,'string',handles.date_to_delete{1},'val',1) % Set the new string.
+    set(handles.listbox1,'string',handles.date_to_delete{1},'Value',[]) % Set the new string.
 end
 handles.dates=get(handles.listbox1,'string');
 guidata(hObject, handles);
-% 
+%
 % % block
 % function listbox2_CreateFcn(hObject, eventdata, handles)
 % if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
@@ -551,4 +509,46 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+%% LFP parameters
 
+function edit22_Callback(hObject, eventdata, handles)
+
+function edit22_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit23_Callback(hObject, eventdata, handles)
+
+function edit23_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit24_Callback(hObject, eventdata, handles)
+
+function edit24_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit25_Callback(hObject, eventdata, handles)
+
+function edit25_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit26_Callback(hObject, eventdata, handles)
+function edit26_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

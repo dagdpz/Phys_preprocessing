@@ -1,4 +1,4 @@
-function TDT_trial_struct_working(data_path,monkey,dates,block,varargin)
+function TDT_trial_struct(handles,date_str,block,spike_settings,varargin)
 % TDT_trial_struct_working('L:\Data\','Linus_phys','20150520','block-1')
 % Last modified: 20170531: Added Broadband filtering and did some major
 % restructuring for stream_state_info separation
@@ -7,12 +7,15 @@ function TDT_trial_struct_working(data_path,monkey,dates,block,varargin)
 % next trial)
 % Danial Arabali & Lukas Schneider
 
+drive=handles.drive;
+monkey=handles.monkey_phys;
+data_path                   = [drive 'Data' filesep]; 
 
 %% crate folders
-plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep dates filesep];
-TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep dates filesep block];
-matfromTDT_folder                  = strcat([data_path monkey '_mat_from_TDT']);
-temp_raw_folder                 = strcat([matfromTDT_folder filesep dates]);
+plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep date_str filesep];
+TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep date_str filesep block];
+matfromTDT_folder               = strcat([data_path monkey '_mat_from_TDT']);
+temp_raw_folder                 = strcat([matfromTDT_folder filesep date_str]);
 DBpath                          = DAG_get_Dropbox_path;
 DBfolder                        = [DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
 if exist(matfromTDT_folder,'dir')~=7
@@ -56,20 +59,21 @@ Block_N=block(strfind(block,'-')+1:end);
 
 %% define plx file and preprocesing settings
 if strcmp(PLXVERSION,'Snippets')
-    plxfile=[plxfilefolder dates  '_blocks_' Block_N PLXEXTENSION '.plx'];
+    plxfile=[plxfilefolder date_str  '_blocks_' Block_N PLXEXTENSION '.plx'];
 else
-    plxfile=[plxfilefolder dates '_' PLXVERSION '_blocks_' Block_N PLXEXTENSION '.plx'];
+    plxfile=[plxfilefolder date_str '_' PLXVERSION '_blocks_' Block_N PLXEXTENSION '.plx'];
 end
 if ~DISREGARDSPIKES
-    preprocessing_settings.plxfile=plxfile;
+    preprocessing_settings.SPK=spike_settings;
+    preprocessing_settings.SPK.plxfile=plxfile;
 end
 if ~DISREGARDLFP
-    preprocessing_settings.LFP_notch_filter1= [49.9 50.1];
-    preprocessing_settings.LFP_notch_filter2= [99.9 100.1];
-    preprocessing_settings.LFP_HP_filter= 1;
-    preprocessing_settings.LFP_LP_bw_filter= 150;
-    preprocessing_settings.LFP_LP_median_filter= 250;
-    preprocessing_settings.LFP_from='Broa';
+    preprocessing_settings.LFP.notch_filter1    = handles.LFP.notch_filter1;
+    preprocessing_settings.LFP.notch_filter2    = handles.LFP.notch_filter2;
+    preprocessing_settings.LFP.HP_filter        = handles.LFP.HP_filter;
+    preprocessing_settings.LFP.LP_bw_filter     = handles.LFP.LP_bw_filter;
+    preprocessing_settings.LFP.LP_median_filter = handles.LFP.median_filter;
+    preprocessing_settings.LFP.from             ='Broa';
 end
 
 %% overwriting snippets with plx file (in case it exists)
@@ -196,7 +200,7 @@ LFP_index=ismember(stream_fieldnames,{'LFPx'});
 if ~any(BB_index) || datainfo.stores.(stream_fieldnames{BB_index}).fs<5000
     stream_fieldnames(BB_index)=[];
     BB_index=false(size(stream_fieldnames));
-    preprocessing_settings.LFP_from='LFPx';
+    preprocessing_settings.LFP.from='LFPx';
 end
 
 %% load excel lag table if applicable
@@ -219,7 +223,7 @@ if any(BB_index)
     data.streams.LFPx.fs=samplingrate/SR_factor;
     
     %% get lag for current block
-    lag=ph_readout_broadband_lag(lag_table_num,lag_table_string,str2double(dates),Block_N);
+    lag=ph_readout_broadband_lag(lag_table_num,lag_table_string,str2double(date_str),Block_N);
     lag_in_samples=round(lag*samplingrate);
     
     %% process broadband per channel
@@ -362,10 +366,15 @@ for r=1:numel(unique_runs)          % looping through runs
     preprocessing_settings_temp=preprocessing_settings;
     
     %% load already existing file (if it exists) and merge structures
-    filename=[temp_raw_folder, filesep, monkey(1:3), 'TDT', dates(1:4), '-', dates(5:6), '-', dates(7:8), '_', sprintf('%02d',run) ];
+    filename=[temp_raw_folder, filesep, monkey(1:3), 'TDT', date_str(1:4), '-', date_str(5:6), '-', date_str(7:8), '_', sprintf('%02d',run) ];
     Validtrials=find(~arrayfun(@(x) isempty(x.trial),TDT_trial_temp));
     if exist([filename '.mat'],'file')
-        load(filename,'TDT_trial','First_trial_INI','preprocessing_settings'); %yes, we load preprocessing_settings as well
+        warning ('off','all');
+        load(filename,'TDT_trial','First_trial_INI','preprocessing_settings'); %yes, we load preprocessing_settings as well,
+        warning ('on','all'); %suppress warning if something is not present?
+        
+        %% display message for empty variables
+        
         if DISREGARDLFP && isfield(TDT_trial,'LFPx')
             %% take over LFP from the file that was already saved if it's there and we disregarded LFP this time
             for vt=Validtrials % really, a loop is needed for this?
@@ -403,7 +412,7 @@ for r=1:numel(unique_runs)          % looping through runs
     TDT_trial(Validtrials)=TDT_trial_temp(Validtrials);
     First_trial_INI=First_trial_INI_temp;
     pp_fns=fieldnames(preprocessing_settings_temp);
-    %% save only really used preprocessing settings (LFP settings not taken over if Disregard_spikes)
+    %% save only really used preprocessing settings (LFP settings not taken over if Disregard_LFP, SPK settings not taken over if DISREGARD_SPIKES)
     for f=1:numel(pp_fns)
         preprocessing_settings.(pp_fns{f})=preprocessing_settings_temp.(pp_fns{f});
     end
@@ -413,19 +422,19 @@ end
 
 function  Output_stream=filter_function(Input_stream,samplingrate,SR_factor,N_samples_original,preprocessing_settings)
 %bandstop filter 50 Hz
-[b,a]=butter(2,preprocessing_settings.LFP_notch_filter1*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP.notch_filter1*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(Input_stream));
 
 %bandstop filter 50 Hz
-[b,a]=butter(2,preprocessing_settings.LFP_notch_filter2*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP.notch_filter2*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(datafilt));
 
 % highpass
-[b,a]=butter(4, preprocessing_settings.LFP_HP_filter*2/samplingrate, 'high'); % 'low', 'high
+[b,a]=butter(4, preprocessing_settings.LFP.HP_filter*2/samplingrate, 'high'); % 'low', 'high
 datafilt=  filtfilt(b,a, datafilt);
 
 % lowpass
-n = floor(samplingrate/preprocessing_settings.LFP_LP_median_filter);
+n = floor(samplingrate/preprocessing_settings.LFP.LP_median_filter);
 datafilt = DAG_median_filter(datafilt,n);
 
 
@@ -456,18 +465,18 @@ end
 
 function  Output_stream=filter_function_simple(Input_stream,samplingrate,preprocessing_settings)
 %bandstop filter 50 Hz
-[b,a]=butter(2,preprocessing_settings.LFP_notch_filter1*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP.notch_filter1*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(Input_stream));
 
 %bandstop filter 50 Hz
-[b,a]=butter(2,preprocessing_settings.LFP_notch_filter2*2/samplingrate,'stop');
+[b,a]=butter(2,preprocessing_settings.LFP.notch_filter2*2/samplingrate,'stop');
 datafilt=  filtfilt(b,a, double(datafilt));
 
 % highpass
-[b,a]=butter(4, preprocessing_settings.LFP_HP_filter*2/samplingrate, 'high'); % 'low', 'high
+[b,a]=butter(4, preprocessing_settings.LFP.HP_filter*2/samplingrate, 'high'); % 'low', 'high
 datafilt=  filtfilt(b,a, datafilt);
 
 % lowpass
-[b,a]=butter(4, preprocessing_settings.LFP_LP_bw_filter*2/samplingrate, 'low'); % 'low', 'high
+[b,a]=butter(4, preprocessing_settings.LFP.LP_bw_filter*2/samplingrate, 'low'); % 'low', 'high
 Output_stream=  filtfilt(b,a, datafilt);
 end
