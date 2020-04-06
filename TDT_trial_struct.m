@@ -72,7 +72,7 @@ if ~DISREGARDLFP
     preprocessing_settings.LFP.notch_filter2    = handles.LFP.notch_filter2;
     preprocessing_settings.LFP.HP_filter        = handles.LFP.HP_filter;
     preprocessing_settings.LFP.LP_bw_filter     = handles.LFP.LP_bw_filter;
-    preprocessing_settings.LFP.LP_median_filter = handles.LFP.median_filter;
+    preprocessing_settings.LFP.LP_median_filter = handles.LFP.LP_median_filter;
     preprocessing_settings.LFP.from             ='Broa';
 end
 
