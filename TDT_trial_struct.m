@@ -229,7 +229,7 @@ if any(BB_index)
     %% process broadband per channel
     for channel=unique(datainfo.stores.(BB).chan)
         chandata=TDTbin2mat_working(TDTblockfolder, varargin_per_channel{:},'CHANNEL',channel);
-        chandata=chandata.streams.(BB).data;
+        chandata=single(chandata.streams.(BB).data);
         %% correct for lag here
         if lag_in_samples>0
             chandata(1:lag_in_samples)=[];
@@ -460,7 +460,7 @@ else
 end
 
 %take nanmean of every 24 samples
-Output_stream=nanmean(reshape(datafilt,SR_factor,numel(datafilt)/SR_factor),1);
+Output_stream=single(nanmean(reshape(datafilt,SR_factor,numel(datafilt)/SR_factor),1));
 end
 
 function  Output_stream=filter_function_simple(Input_stream,samplingrate,preprocessing_settings)
@@ -478,5 +478,5 @@ datafilt=  filtfilt(b,a, datafilt);
 
 % lowpass
 [b,a]=butter(4, preprocessing_settings.LFP.LP_bw_filter*2/samplingrate, 'low'); % 'low', 'high
-Output_stream=  filtfilt(b,a, datafilt);
+Output_stream=  single(filtfilt(b,a, datafilt));
 end
