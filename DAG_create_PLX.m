@@ -10,8 +10,8 @@ run([DBfolder 'Electrode_depths_' monkey_phys(1:3)]);
 channels_to_process=unique([channels{cell2mat(Session)==Session_as_num}]);
 
 %% CREATE PLX FILE(S) from snippets
-handles.par.sr = 24414.0625; % can this one be taken from the files themselves?
-handles.threshold='neg';
+% handles.par.sr = 24414.0625; % can this one be taken from the files themselves?
+% handles.threshold='neg';
 handles.sortcodes_folder        = [drive 'Data' filesep 'Sortcodes' filesep monkey_phys filesep Session_as_str filesep];          % path of recordings
 handles.tank_folder             = [drive 'Data' filesep 'TDTtanks'  filesep monkey_phys filesep Session_as_str filesep];
 handles.WC_concatenation_folder = [handles.sortcodes_folder 'WC' filesep];
@@ -73,8 +73,12 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
     blocks_in_this_session=[block{cell2mat(Session)==Session_as_num}];
     temp_handles=handles;
     load([handles.WC_concatenation_folder 'concatenation_info'])
-    handles=temp_handles;
-    handles.sr=sr;
+    load([handles.WC_concatenation_folder 'settings'])
+    for fn=fieldnames(temp_handles)'
+        handles.(fn{:})=  temp_handles.(fn{:});
+    end
+    
+    %handles.sr=sr;
     for b=blocks_in_this_session
         recname=['blocks_' num2str(b)];
         handles.blocksamplesperchannel=blocksamplesperchannel;
@@ -83,7 +87,7 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
         handles.block=b;
         handles.channels=channels_to_process;
         SPK = WC32SPK_concatenated(handles);
-        SPK.int_factor = 2;
+        %SPK.int_factor = 2;
         
         % rescaling by block and channel!
         for chan=unique(SPK.channelID)'

@@ -191,18 +191,18 @@ if handles.TODO.WCFromBB
     handles.WC.w_pre = 10;
     handles.WC.w_post = 22;
     handles.WC.ref = 0.001;
-    handles.WC.int_factor = 2;
-    handles.WC.interpolation ='y';
+    handles.WC.int_factor = 1;
+    handles.WC.interpolation ='n';
     handles.WC.stdmax = 100;
     
     
     % FEATURE SELECTION
     %handles.WC.features = 'wavpcarawderiv';    %choice of spike features: wav: wavelet decomposition; pca: principle component analyses; raw: raw waveforms; deriv: first derivative of the raw waveforms
-    handles.WC.features = 'wavpcaraw';
+    handles.WC.features = 'wavpcarawtime';
     handles.WC.wavelet='haar';                 %choice of wavelet family for wavelet features
     handles.WC.exclusioncrit = 'thr';          % this part is weird to me as well, 
-    handles.WC.exclusionthr = 0.8;             % features are excluded, until no feature pairs are correlated more than exclusionthr  %def R^2 = 0.80
-    handles.WC.maxinputs = 11;   %15 %17, 15              %number of inputs to the clustering def. 11
+    handles.WC.exclusionthr = 0.9;             % features are excluded, until no feature pairs are correlated more than exclusionthr  %def R^2 = 0.80
+    handles.WC.maxinputs = 9;   %15 %17, 15              %number of inputs to the clustering def. 11
     handles.WC.scales = 4;                     %scales for wavelet decomposition
     
     
@@ -216,26 +216,25 @@ if handles.TODO.WCFromBB
     handles.WC.KNearNeighb = 11;               %number of nearest neighbors
     
     %handles.WC.chunk=5;                        %length of pieces into which file has to be splitted
-    handles.WC.max_spikes2cluster = 40000;     % maximum number of spikes to cluster, if more take only this amount of randomly chosen spikes, others are set into cluster 0
+    handles.WC.max_spikes2cluster = 100000;%40000;     % maximum number of spikes to cluster, if more take only this amount of randomly chosen spikes, others are set into cluster 0
     % check! should be: %maximum
     % number of spikes used for
     % clustering, rest is forced by
     % `????
-    % handles.stab = 0.8;                      %stability condition for selecting the temperature
     
     %For clustering, clear definition difficult
     handles.WC.min_clus_abs = 10;
-    handles.WC.min_clus_rel = 0.005;          %Default: 0.005% alternative: 0.0035
-    handles.WC.max_nrclasses = 8;
+    handles.WC.min_clus_rel = 0.001;%0.0025;          %Default: 0.005% alternative: 0.0035
+    handles.WC.max_nrclasses = 11;
     handles.WC.template_sdnum = 5;             % max radius of cluster in std devs. for classifying rest
     
-        handles.WC.classify_space='spikeshapesfeatures'; %% for classifying rest only?
+        handles.WC.classify_space='features'; %% for classifying rest only?
         handles.WC.classify_method= 'linear'; %% for classifying rest only?
         
     % PLOTTING
     handles.WC.temp_plot = 'log';              % temperature plot in log scale
     handles.WC.max_spikes2plot = 1000;         %maximum number of spikes to plot.
-    handles.WC.max_nrclasses2plot = 8;
+    handles.WC.max_nrclasses2plot = 8; %%???????????????????????????
     
     
     %% inputs
