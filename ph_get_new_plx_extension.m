@@ -15,15 +15,19 @@ switch version
         filenames=filenames(cellfun(@(x) isempty(strfind(x,'from_BB')) && isempty(strfind(x,'realigned')),filenames));
 end
 filenames=filenames(cellfun(@(x) ~isempty(strfind(x,'-')),filenames));
-for f=1:numel(filenames)
-    underscore_indexes=strfind(filenames{f},'_');
-    blocks(f)= str2double(filenames{f}(underscore_indexes(end)+1:end-7));
-    extensions(f)= str2double(filenames{f}(strfind(filenames{f},'-')+1:end-4));
-end
-
-unique_blocks=unique(blocks);
-for b=unique_blocks
-    ex=max(extensions(blocks==unique_blocks(b)))+1;
-    plx_extension_per_block(b)=ex;
+if isempty(filenames)
+    plx_extension_per_block=ones(1,100);
+else
+    for f=1:numel(filenames)
+        underscore_indexes=strfind(filenames{f},'_');
+        blocks(f)= str2double(filenames{f}(underscore_indexes(end)+1:end-7));
+        extensions(f)= str2double(filenames{f}(strfind(filenames{f},'-')+1:end-4));
+    end
+    
+    unique_blocks=unique(blocks);
+    for b=unique_blocks
+        ex=max(extensions(blocks==unique_blocks(b)))+1;
+        plx_extension_per_block(b)=ex;
+    end
 end
 end
