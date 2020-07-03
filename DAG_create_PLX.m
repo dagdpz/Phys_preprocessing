@@ -74,6 +74,18 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
     temp_handles=handles;
     load([handles.WC_concatenation_folder 'concatenation_info'])
     load([handles.WC_concatenation_folder 'settings'])
+    if isfield(handles,'output')
+        handles=rmfield(handles,'output');
+    end
+            
+    for fn=fieldnames(handles)'
+        if isobject(handles.(fn{:}))
+            if strcmp(get(handles.(fn{:}),'type'),'figure')
+                close(handles.(fn{:}));
+            end
+            handles=rmfield(handles,fn{:});
+        end
+    end
     for fn=fieldnames(temp_handles)'
         handles.(fn{:})=  temp_handles.(fn{:});
     end
