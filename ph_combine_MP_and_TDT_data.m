@@ -76,6 +76,8 @@ for k=1: length(dir_folder_with_session_days)
         ctr=ctr+1;
     end
 end
+        tmp_plx_file_table=plx_file_table_to_use(1,:);
+        count=1;
 for fol=1:numel(session_folders)
     date=session_folders{fol};
     date_num=str2num(date);
@@ -90,6 +92,7 @@ for fol=1:numel(session_folders)
     end
     
     for i=1:numel(blocks_string);
+        count=count+1;
         block = blocks_string{i};
         block_num=str2num(block(findstr(block,'-')+1:end));
         
@@ -100,11 +103,12 @@ for fol=1:numel(session_folders)
         end
         if ~any(plx_file_idx) || DISREGARDSPIKES % to make sure it also runs without associated plx files
             PLXVERSION='none';
-            PLXEXTENSION='-00';
+            plxxtesion=0;
         else
             PLXVERSION=plx_file_table_to_use{plx_file_idx,idx.Sorttype};
-            PLXEXTENSION=sprintf('-%02d',plx_file_table_to_use{plx_file_idx,idx.Plx_file_extension});
+            plxxtesion=plx_file_table_to_use{plx_file_idx,idx.Plx_file_extension};
         end
+            PLXEXTENSION=sprintf('-%02d',plxxtesion);
         %% WC settings saved here as well, from ALL_preprocessing_logs history
         substruct=[PLXVERSION '_blocks_' num2str(block_num) '_sortcode_' PLXEXTENSION(2:end)];
         if isfield(settings,[monkey(1:3) '_' date]) && isfield(settings.([monkey(1:3) '_' date]),'WC_per_sortcode') ...
@@ -119,21 +123,20 @@ for fol=1:numel(session_folders)
          TDT_trial_struct(handles,date,block,spike_settings,TDT_trial_struct_input{:})
        
         %% storing used sortcode information in plx table
-        tmp_plx_file_table=plx_file_table_to_use(1,:);
-        tmp_plx_file_table{2,idx.Monkey}=monkey(1:3);
-        tmp_plx_file_table{2,idx.Date}=date_num;
-        tmp_plx_file_table{2,idx.Block}=block_num;
-        tmp_plx_file_table{2,idx.Sorttype}=PLXVERSION;
-        tmp_plx_file_table{2,idx.Plx_file_extension}=PLXEXTENSION;
+        tmp_plx_file_table{count,idx.Monkey}=monkey(1:3);
+        tmp_plx_file_table{count,idx.Date}=date_num;
+        tmp_plx_file_table{count,idx.Block}=block_num;
+        tmp_plx_file_table{count,idx.Sorttype}=PLXVERSION;
+        tmp_plx_file_table{count,idx.Plx_file_extension}=plxxtesion;
         tmp_plx_file_idx=[false, [plx_file_table_in_use{2:end,idx.Date}]==date_num] & [false, [plx_file_table_in_use{2:end,idx.Block}]==block_num];
         if DISREGARDSPIKES && any(plx_file_idx) 
-            tmp_plx_file_table{2,idx.Sorttype}              =plx_file_table_in_use{tmp_plx_file_idx,idx.Sorttype};
-            tmp_plx_file_table{2,idx.Plx_file_extension}    =plx_file_table_in_use{tmp_plx_file_idx,idx.Plx_file_extension};
+            tmp_plx_file_table{count,idx.Sorttype}              =plx_file_table_in_use{tmp_plx_file_idx,idx.Sorttype};
+            tmp_plx_file_table{count,idx.Plx_file_extension}    =plx_file_table_in_use{tmp_plx_file_idx,idx.Plx_file_extension};
         end
     end
+[plx_file_table_in_use]=DAG_update_cell_table(plx_file_table_in_use,tmp_plx_file_table,'Date');
     xlswrite([TDT_data_path date filesep monkey(1:3) '_plx_files.xlsx'],plx_file_table_to_use,'list_of_used_plx_files');
     
-[plx_file_table_in_use]=DAG_update_cell_table(plx_file_table_in_use,tmp_plx_file_table,'Date');
 xlswrite([DBfolder  monkey(1:3) '_plx_files.xlsx'],plx_file_table_in_use,'in_use');
 end
 

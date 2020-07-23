@@ -78,14 +78,7 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
         handles=rmfield(handles,'output');
     end
             
-    for fn=fieldnames(handles)'
-        if isobject(handles.(fn{:}))
-            if strcmp(get(handles.(fn{:}),'type'),'figure')
-                close(handles.(fn{:}));
-            end
-            handles=rmfield(handles,fn{:});
-        end
-    end
+    handles=DAG_rmobjects_from_struct(handles,1);
     for fn=fieldnames(temp_handles)'
         handles.(fn{:})=  temp_handles.(fn{:});
     end

@@ -115,6 +115,7 @@ end
 
 %% save executed action ... where? -> dependent on TODO? Shouldnt safe in combined files folders! (monkey folders - combined/protocol/executed_2020102
 save_internal(handles,'All_phys_preprocessing_log',handles.monkey_phys,'executed_');
+end
 
 function save_internal(handles,folder,subfolder,executed)
 
@@ -126,6 +127,9 @@ if ~exist([handles.drive  'Data' filesep folder filesep subfolder filesep],'dir'
     mkdir([handles.drive  'Data' filesep folder filesep ,subfolder]);
 end
 path=[handles.drive  'Data' filesep folder  filesep subfolder filesep];
+
+    handles=DAG_rmobjects_from_struct(handles);
 save([path executed '_' datestr(clock,'YYYYmmDD-HHMM')],'handles');
 %% save executed action ... where? -> dependent on TODO? Shouldnt safe in combined files folders! (monkey folders - combined/protocol/executed_2020102
 a=1;
+end
