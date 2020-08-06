@@ -216,15 +216,15 @@ if handles.TODO.WCFromBB
     handles.WC.KNearNeighb = 11;               %number of nearest neighbors
     
     %handles.WC.chunk=5;                        %length of pieces into which file has to be splitted
-    handles.WC.max_spikes2cluster = 100000;%40000;     % maximum number of spikes to cluster, if more take only this amount of randomly chosen spikes, others are set into cluster 0
+    handles.WC.max_spikes2cluster = 40000;%40000;     % maximum number of spikes to cluster, if more take only this amount of randomly chosen spikes, others are set into cluster 0
     % check! should be: %maximum
     % number of spikes used for
     % clustering, rest is forced by
     % `????
     
     %For clustering, clear definition difficult
-    handles.WC.min_clus_abs = 10;
-    handles.WC.min_clus_rel = 0.001;%0.0025;          %Default: 0.005% alternative: 0.0035
+    handles.WC.min_clus_abs = 100;
+    handles.WC.min_clus_rel = 0.005;%0.0025;          %Default: 0.005% alternative: 0.0035
     handles.WC.max_nrclasses = 11;
     handles.WC.template_sdnum = 5;             % max radius of cluster in std devs. for classifying rest
     

@@ -42,6 +42,6 @@ SPK.samplingrate=24414.0625;
 SPK.int_factor=1;
 
 
-SPK2PLX(SPK,specific_channel_PLX_file);
+SPK2PLX(SPK,other_channels_PLX_file);
 
 end

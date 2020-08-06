@@ -25,7 +25,7 @@ else
     end
     
     unique_blocks=unique(blocks);
-    for b=unique_blocks
+    for b=1:numel(unique_blocks)
         ex=max(extensions(blocks==unique_blocks(b)))+1;
         plx_extension_per_block(b)=ex;
     end
