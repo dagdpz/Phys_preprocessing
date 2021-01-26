@@ -4,6 +4,7 @@ w_post=ceil(size(snippets.data,2)*2/3);
 sr=snippets.fs;
 
 par=struct;
+par.sr=snippets.fs;
 thr=NaN;
 channels=unique(snippets.chan)';
 for ch= channels

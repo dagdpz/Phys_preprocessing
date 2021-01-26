@@ -51,7 +51,7 @@ if any([PLX_creation{:,2}]) || TODO.WCFromBB
         for v=PLX_versions_to_create
             plx_extension=ph_get_new_plx_extension(sortcode_path_pre,PLX_creation{v,1});
             handles.plx_version_per_block.([handles.monkey_phys(1:3) '_' num2str(dates_to_loop(i))])=plx_extension;
-            DAG_create_PLX(dates_to_loop(i),handles.monkey_phys,tank_b_names,PLX_creation{v,1})
+            DAG_create_PLX(dates_to_loop(i),handles.monkey_phys,handles.threshold,tank_b_names,PLX_creation{v,1})
         end
     end
 end

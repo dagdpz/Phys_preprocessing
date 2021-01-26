@@ -1,4 +1,5 @@
-function DAG_create_PLX(Session_as_num,monkey_phys,recordingnames,processing_mode)
+function DAG_create_PLX(Session_as_num,monkey_phys,threshold,recordingnames,processing_mode)
+
 Session_as_str=num2str(Session_as_num);
 drive=DAG_get_server_IP;
 DBpath=DAG_get_Dropbox_path;
@@ -10,8 +11,8 @@ run([DBfolder 'Electrode_depths_' monkey_phys(1:3)]);
 channels_to_process=unique([channels{cell2mat(Session)==Session_as_num}]);
 
 %% CREATE PLX FILE(S) from snippets
-% handles.par.sr = 24414.0625; % can this one be taken from the files themselves?
-% handles.threshold='neg';
+%handles.par.sr = 24414.0625; % can this one be taken from the files themselves?
+handles.threshold=threshold;
 handles.sortcodes_folder        = [drive 'Data' filesep 'Sortcodes' filesep monkey_phys filesep Session_as_str filesep];          % path of recordings
 handles.tank_folder             = [drive 'Data' filesep 'TDTtanks'  filesep monkey_phys filesep Session_as_str filesep];
 handles.WC_concatenation_folder = [handles.sortcodes_folder 'WC' filesep];

@@ -151,6 +151,8 @@ col_button = get(Button_run,'backg');  % Get the background color of the figure.
 set(Button_run,'str','RUNNING...','backg',[1 .6 .6]) % Change color of button.
 pause(.01)  % FLUSH the event queue, drawnow would work too.
 
+
+    handles.threshold =get(handles.edit10,'String');
 handles.sessions=get(handles.listbox1,'String');
 handles.dates= sort(str2num(cell2mat(handles.sessions)));
 %% transform checkbox tags to fieldnames
