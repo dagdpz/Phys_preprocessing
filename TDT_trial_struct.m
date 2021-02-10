@@ -12,6 +12,7 @@ monkey=handles.monkey_phys;
 data_path                   = [drive 'Data' filesep]; 
 
 %% crate folders
+%wcfolder                   = [data_path 'Sortcodes' filesep monkey filesep date_str filesep 'WC' filesep];
 plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep date_str filesep];
 TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep date_str filesep block];
 matfromTDT_folder               = strcat([data_path monkey '_mat_from_TDT']);
@@ -77,7 +78,18 @@ if ~DISREGARDLFP
 end
 
 %% overwriting snippets with plx file (in case it exists)
-if exist(plxfile,'file')
+if handles.SpikesFromWCdirectly
+    snipfield=fieldnames(data.snips);
+    WC_info=load([plxfilefolder 'WC' filesep 'concatenation_info']);
+    WC_info.concatenation_folder=[plxfilefolder 'WC' filesep];
+    WC_info.block=str2double(Block_N);
+    SPK=WC32SPK_directly(WC_info);
+    data.snips.(snipfield{1}).data      =SPK.waveforms;
+    data.snips.(snipfield{1}).chan      =SPK.channelID;
+    data.snips.(snipfield{1}).sortcode  =SPK.sortID;
+    data.snips.(snipfield{1}).ts        =SPK.spiketimes;
+    disp('Spikes taken directly from WC');
+elseif exist(plxfile,'file')
     SPK=PLX2SPK(plxfile);            % convert the sorted plexon file into spkobj-format; merge the new sorted waveforms with the old SPKOBJ to geht thresholds and noiselevels as well.
     %backscaling (see DAG_create_PLX)
     if strcmp(PLXVERSION,'from_BB')

@@ -1,6 +1,6 @@
 function phys_gui_working(varargin)
 
-% Last Modified by GUIDE v2.5 19-Mar-2020 11:35:57
+% Last Modified by GUIDE v2.5 10-Feb-2021 14:39:37
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -553,3 +553,12 @@ function edit26_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in checkbox41.
+function checkbox41_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox41 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox41

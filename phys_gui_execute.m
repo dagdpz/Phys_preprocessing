@@ -104,6 +104,7 @@ if  TODO.CombineTDTandMP % Combine
     else
         temp_block= str2num(cell2mat(temp_block));
     end
+    handles.SpikesFromWCdirectly=TODO.SpikesFromWCdirectly;
     %handles.TDT.PLXVERSION=get(get(handles.uipanel11,'SelectedObject'),'String');
     ph_combine_MP_and_TDT_data(handles,dates_to_loop,temp_block); %,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP,'DISREGARDSPIKES',TODO.DisregardSpikes)
     %handles.plx_table_sheet='list_of_used_plx_files';

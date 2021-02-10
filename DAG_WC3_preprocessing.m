@@ -125,7 +125,7 @@ for ch=channels_to_process
         channelfile=[sprintf('%03d',handles.current_channel) '_' num2str(handles.current_channel_file)];
         
         handles.WC.sr=handles.sr_per_block{handles.current_blocks(1)}; % here we make sure real TDT sr is taken; so this info needs to be saved
-    
+        
         %% correct state onsets...
         blockstart_samples=0;
         handles.task_times=[];
@@ -140,23 +140,25 @@ for ch=channels_to_process
         end
         
         %% Detect and cluster SUs and MUs individually
-        for threshold_step={'SU','MU'}
+        threshold_steps={'SU';'MU'};
+        
+        for s=1:numel(threshold_steps)
+            threshold_step=threshold_steps(s);
             handles.current_threshold_step=threshold_step{:};
             handles.WC.stdmin = handles.WC.(['StdThr' handles.current_threshold_step]);
             
             %% Spike detection
             wc_extract_spikes_cat_MU_SU(handles);
-            
+            switch handles.WC.threshold
+                case 'pos'
+                    thresholds={'_pos'};
+                case 'neg'
+                    thresholds={'_neg'};
+                case 'both'
+                    thresholds={'_neg';'_pos'};
+            end
             %% load SU threshold spikes file and remove the respective spikes
-            if strcmp(threshold_step,'MU') 
-                switch handles.WC.threshold
-                    case 'pos'
-                        thresholds={'_pos'};
-                    case 'neg'
-                        thresholds={'_neg'};
-                    case 'both'
-                        thresholds={'_neg','_pos'};
-                end
+            if strcmp(threshold_step,'MU')                
                 for k=1:numel(thresholds)
                     filename_MU=[handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_MU' thresholds{k} '.mat'];
                     filename_SU=[handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_SU' thresholds{k} '.mat'];
@@ -170,12 +172,54 @@ for ch=channels_to_process
                     cluster_class=cluster_class(to_keep,:);
                     save(filename_MU,'spikes','index','thr','par','cluster_class')
                 end
-            end
-            
-            cd(handles.WC_concatenation_folder) % for SPC to work, we have to change to the respective directory...
-            wc_clustering_iterative_cat_MU_SU(handles); % this one does the actual clustering. There is no way to do it in waveclus itself...
-            cd(current_path)
+            end        
         end
+        
+        %% feature computation within SU/MU
+        [Ax,Bx] = ndgrid(1:numel(threshold_steps),1:numel(thresholds));
+        feature_types = strcat(threshold_steps(Ax(:)),thresholds(Bx(:)));
+        clear tmp
+        for k=1:numel(feature_types)
+            load([handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_' feature_types{k} '.mat']);
+            tmp.spikes{k}=spikes;
+            tmp.index{k}=index;
+            tmp.thr{k}=thr;
+            tmp.par{k}=par;
+            tmp.cluster_class{k}=cluster_class;
+            
+            fprintf(['Feature detection for ' channelfile feature_types{k} '...\n']);
+            [tmp.features{k},tmp.feature_names,tmp.feature_sds{k}] = wc_get_features(spikes,index,handles);
+            delete([handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_' feature_types{k} '.mat']);
+        end
+        
+        %% get relevant parameters
+        
+        %% concatinate all and order by time
+        spikes=vertcat(tmp.spikes{:});
+        index=vertcat(tmp.index{:});
+        ccall=vertcat(tmp.features{:});
+        cluster_class=vertcat(tmp.cluster_class{:});
+        par=tmp.par{1};
+        thr=vertcat(tmp.thr{:});
+        
+        [~,t_index]=sort(index);
+        spikes=spikes(t_index,:);
+        ccall=ccall(t_index,:);
+        index=index(t_index,:);
+        cluster_class=cluster_class(t_index,:);
+        features_per_subset=tmp.features;
+        fn=tmp.feature_names;
+        feature_sds = vertcat(tmp.feature_sds{:});
+        
+        save([handles.WC_concatenation_folder 'dataspikes_ch' channelfile '.mat'],'spikes','index','thr','par','cluster_class')
+        
+        %% feature selestion across the entire dataset!
+        [inspk,feature_names,inputs] = wc_feature_selection3(ccall,fn,feature_sds,features_per_subset,handles);
+        
+        cd(handles.WC_concatenation_folder) % for SPC to work, we have to change to the respective directory...
+        wc_clustering_iterative_combined(inspk,feature_names,inputs,handles); % this one does the actual clustering. There is no way to do it in waveclus itself...
+        cd(current_path)
+        
         
     end
     
