@@ -1,12 +1,8 @@
 function phys_gui_execute(handles)
 %% save attempted action
 save_internal(handles,'All_phys_preprocessing_log',handles.monkey_phys,'attempted_');
-
-
 dates_to_loop=handles.dates;
 TODO=handles.TODO;
-%temp_block=num2cell(get(handles.listbox2,'String'));
-
 
 %% transform checkbox tags to fieldnames
 todo_fn=fieldnames(TODO);
@@ -27,7 +23,6 @@ if TODO.SynapseTankToOldFormat
 end
 
 % TODO.TDTSnippetsSortcodeFromPLX ?
-
 if any([PLX_creation{:,2}]) || TODO.WCFromBB
     tank_path = [handles.drive];
     for i=1:numel(dates_to_loop)
@@ -42,8 +37,7 @@ if any([PLX_creation{:,2}]) || TODO.WCFromBB
                 tank_b_names{:,jj}=tank_dir(j).name;
                 jj=jj+1;
             end
-        end
-        
+        end        
         if TODO.WCFromBB
             DAG_WC3_preprocessing(dates_to_loop(i),tank_b_names,handles)
         end
@@ -55,7 +49,6 @@ if any([PLX_creation{:,2}]) || TODO.WCFromBB
         end
     end
 end
-
 
 if TODO.Assign_WC_waveforms_to_PLX
     % Kind of complicated scripting for just looping through all selected
@@ -94,7 +87,7 @@ if TODO.Assign_WC_waveforms_to_PLX
 end
 
 if  TODO.UpdateSortcodeExcel % Combine
-    DAG_update_plx_file_table(dates_to_loop,handles) 
+    DAG_update_plx_file_table(dates_to_loop,handles)
 end
 
 if  TODO.CombineTDTandMP % Combine
@@ -105,10 +98,7 @@ if  TODO.CombineTDTandMP % Combine
         temp_block= str2num(cell2mat(temp_block));
     end
     handles.SpikesFromWCdirectly=TODO.SpikesFromWCdirectly;
-    %handles.TDT.PLXVERSION=get(get(handles.uipanel11,'SelectedObject'),'String');
-    ph_combine_MP_and_TDT_data(handles,dates_to_loop,temp_block); %,'PLXVERSION',PLXVERSION,'DISREGARDLFP',TODO.DisregardLFP,'DISREGARDSPIKES',TODO.DisregardSpikes)
-    %handles.plx_table_sheet='list_of_used_plx_files';
-    %DAG_update_plx_file_table(dates_to_loop,handles)
+    ph_combine_MP_and_TDT_data(handles,dates_to_loop,temp_block);
 end
 if  TODO.CreateExcelEntries % Sorting excel table update
     DAG_update_sorting_table(handles.monkey_phys,dates_to_loop);
@@ -119,17 +109,14 @@ save_internal(handles,'All_phys_preprocessing_log',handles.monkey_phys,'executed
 end
 
 function save_internal(handles,folder,subfolder,executed)
-
 if ~exist([handles.drive  'Data' filesep folder  filesep ],'dir')
     mkdir([handles.drive  'Data' filesep,folder]);
 end
-
 if ~exist([handles.drive  'Data' filesep folder filesep subfolder filesep],'dir')
     mkdir([handles.drive  'Data' filesep folder filesep ,subfolder]);
 end
 path=[handles.drive  'Data' filesep folder  filesep subfolder filesep];
-
-    handles=DAG_rmobjects_from_struct(handles);
+handles=DAG_rmobjects_from_struct(handles);
 save([path executed '_' datestr(clock,'YYYYmmDD-HHMM')],'handles');
 %% save executed action ... where? -> dependent on TODO? Shouldnt safe in combined files folders! (monkey folders - combined/protocol/executed_2020102
 a=1;
