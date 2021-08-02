@@ -29,7 +29,7 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
         
         data = TDTbin2mat_working([handles.tank_folder recordingnames{ii}], 'EXCLUSIVELYREAD',{'eNeu','SVal'},'SORTNAME', 'Plexsormanually');
         snippets=data.snips.eNeu;
-        state_information=data.epocs.SVal;
+       % state_information=data.epocs.SVal;
         %         offs=[];
         %         %% on and offs are in seconds!
         %         offs_temp=state_information.onset(state_information.data>18);
