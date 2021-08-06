@@ -65,7 +65,7 @@ for ii =1:length(recordingnames)
     state_information = TDTbin2mat_working([handles.tank_folder recordingname] , 'EXCLUSIVELYREAD',{'SVal'},'SORTNAME', 'Plexsormanually');
     
     %% get task on and offsets (to potentially cut out ITI later on) : on and offs are in seconds!
-    if ~isempty(state_information.epocs)
+    if handles.WC.remove_ini && ~isempty(state_information.epocs) %% && isfield(state_information,'epocs') 
         offs_temp=state_information.epocs.SVal.onset(state_information.epocs.SVal.data>18);
         ons=state_information.epocs.SVal.onset(state_information.epocs.SVal.data<2);
         offs=NaN(size(ons));
