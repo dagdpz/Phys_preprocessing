@@ -165,6 +165,8 @@ else
     Hour        =data.epocs.Hour.data;
     Minute      =data.epocs.Minu.data;
     Second      =data.epocs.Scnd.data;
+    
+    
     % strange bug for counters in TDT not being set correctly in the first trial, fixed in TDT (on ??)...
     if numel(Trials)>1
         Trials(1)   =Trials(2)-1;
@@ -177,6 +179,22 @@ else
     temp_duration   =datevec(datenum(data.info.duration));
     temp_duration   =temp_duration(4)*3600+temp_duration(5)*60+temp_duration(6);
     trialonsets     =[data.epocs.Tnum.onset; temp_duration];
+    
+    
+    % strange bug for counters in TDT not being set correctly in several trials in the beginning, 
+    % probably due to random digital input (no idea where idea where that
+    % came from): Bac_20210826
+    if any(Trials<1)
+        invalid=        Trials<1;
+        Trials(invalid)       =[];
+        Runs(invalid)         =[];
+        Session(invalid)      =[];
+        Hour(invalid)         =[];
+        Minute(invalid)       =[];
+        Second(invalid)       =[];
+        trialonsets(invalid)  =[];
+        disp(['Corrupted (probably not existing) trials of ' block ' removed']);
+    end
     
     if sum(Trials==1)>1
         disp(['Warning: multiple Runs in one block! Run onsets at TDT trials : ' mat2str(find(Trials==1))]);
