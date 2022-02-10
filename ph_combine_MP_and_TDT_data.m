@@ -1,7 +1,7 @@
 function ph_combine_MP_and_TDT_data(handles,dates,blocks)
 
 % ph_combine_MP_and_TDT_data('L','Linus_phys',[20150508 20150525],[])
-% Converts TDT data into trial structure format (using TDT_trial_struct_working)
+% Converts TDT data into trial structure format (using TDT_trial_struct)
 % and combines behavioural data with ephys data into a separate folder
 
 % % % % % % % % % % % % % % % %

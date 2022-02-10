@@ -28,6 +28,10 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
         %         state_information = TDTbin2mat_working([drive 'Data\TDTtanks' filesep monkey], num2str(tankname), recordingnames{ii}, 'EXCLUSIVELYREAD',{'SVal'},'SORTNAME', 'Plexsormanually');
         
         data = TDTbin2mat_working([handles.tank_folder recordingnames{ii}], 'EXCLUSIVELYREAD',{'eNeu','SVal'},'SORTNAME', 'Plexsormanually');
+        if ~isfield(data,'snips') || ~isfield(data.snips,'eNeu')
+           disp('no snippets found, continueing');
+           continue 
+        end
         snippets=data.snips.eNeu;
         %         state_information=data.epocs.SVal;
         %         offs=[];

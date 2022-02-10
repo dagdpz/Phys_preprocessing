@@ -1,5 +1,5 @@
 function TDT_trial_struct(handles,date_str,block,spike_settings,varargin)
-% TDT_trial_struct_working('L:\Data\','Linus_phys','20150520','block-1')
+% TDT_trial_struct('L:\Data\','Linus_phys','20150520','block-1')
 % Last modified: 20170531: Added Broadband filtering and did some major
 % restructuring for stream_state_info separation
 % Last modified: 20170515: Fixed bug in chopping streamed data into trials
@@ -281,10 +281,11 @@ end
 %% separate each trial (the actual trial structure creation)
 
 stream_fieldnames=fieldnames(data.streams);
+stream_fieldnames_first_INI=[stream_fieldnames, repmat({[]},size(stream_fieldnames))]';
 unique_runs=unique(Runs);           % important to separate Blocks with several runs
 tr_block=0;                         % trial index in the block
 tr_processed=0;                     % accumulator for keeping track of previous trials in this block
-First_trial_INI=struct;             % because this might be not assigned if trial(1) is not 1
+First_trial_INI=struct(stream_fieldnames_first_INI{:});             % because this might be not assigned if trial(1) is not 1
 for r=1:numel(unique_runs)          % looping through runs
     clear TDT_DATA DATA_TO_APPEND
     runtrials=Trials(Runs==unique_runs(r))'; % Only the trials that corrspond to current run
