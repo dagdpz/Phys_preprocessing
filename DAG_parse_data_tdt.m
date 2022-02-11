@@ -1,5 +1,5 @@
 function DAG_parse_data_tdt(handles, input_stream, lag)
-%This code required OpenDeveloper (Tucker-Davis Technologies)
+%This code requires OpenDeveloper (Tucker-Davis Technologies)
 limit_to_channels=handles.channels_to_process;
 Block=handles.block_path;
 folder = fileparts(Block);
@@ -13,15 +13,14 @@ else
 end
 TDT_block_file=[Tank filesep Block];
 
-
 if strcmp(input_stream,'Broadband')
-    streamnames={'Broa','BROA'}; %'Broa','BROA',
+    streamnames={'Broa','BROA'}; 
     data = TDTbin2mat_working(TDT_block_file, 'EXCLUSIVELYREAD',streamnames, 'T1',0,'T2',1);
     streamname=streamnames{ismember(streamnames,fieldnames(data.streams))};
 elseif strcmp(input_stream,'snippets')
     streamnames={'eNeu'};
     data = TDTbin2mat_working(TDT_block_file, 'EXCLUSIVELYREAD',streamnames, 'T1',0,'T2',1);
-    streamname='eNeu'; %'Broa','BROA',
+    streamname='eNeu'; 
 end
 sr = data.streams.(streamname).fs;
 lag_in_samples=round(lag*sr);
@@ -37,11 +36,12 @@ if ~isstr(limit_to_channels) && ~all(isnan(limit_to_channels)) && ~isempty(limit
 end
 fprintf('Parsing %d channels in the block (found in Electrode_depths)\n', numel(channels))
 
+%% parse each channel separately
 for ch = channels
     fout = fopen([handles.WC_block_folder Block '_' num2str(ch) '.tdtch'],'w','l');
     data = TDTbin2mat_working(TDT_block_file, 'EXCLUSIVELYREAD',streamnames,'CHANNEL',ch);
     
-    %% use lag info
+    % use lag info
     if lag_in_samples>0
         data.streams.(streamname).data(1:lag_in_samples)=[];
     else
@@ -52,7 +52,6 @@ for ch = channels
     fclose(fout);
     lts = numel(data.streams.(streamname).data);
     clear data
-    
 end
 
 save(handles.TDT_meta_data_file,'sr','lts','channels')

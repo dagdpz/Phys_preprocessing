@@ -1,10 +1,52 @@
 function TDT_trial_struct(handles,date_str,block,spike_settings,varargin)
-% TDT_trial_struct('L:\Data\','Linus_phys','20150520','block-1')
-% Last modified: 20170531: Added Broadband filtering and did some major
-% restructuring for stream_state_info separation
-% Last modified: 20170515: Fixed bug in chopping streamed data into trials
-% (was using the same sample for end of this as well as for beginning of
-% next trial)
+% this is probably the one core function of the entire preprocessing pipeline.
+% TDT data is formatted like the monkeypsych trial structure,
+% using the desired sortcodes
+
+% INPUTS: (yes, the inputs here could be a bit more compact...)
+% handles: handles structure from phys_gui containing multiple information,
+%          the only ones used here are:
+%          handles.drive                   
+%          handles.monkey_phys
+%          LFP handles:
+%               handles.LFP.notch_filter1;
+%               handles.LFP.notch_filter2;
+%               handles.LFP.HP_filter;
+%               handles.LFP.LP_bw_filter;
+%               handles.LFP.LP_med_filter;
+% date_str: session date as a string, f.e.: '20210826'
+% block: block fodler name as string, f.e.: 'Block-1'
+% spike_settings: basically unused, but forwarded information about preceding spike processing
+%
+% varargin, most of which are directly passed on to TDT_bin2mat_working
+% Exceptions: 
+%   PLXVERSION          =''     ;
+%   PLXEXTENSION        ='-01'  
+%   DISREGARDLFP        = 0/1 ;
+%   DISREGARDSPIKES     = 0/1;
+% Passed on arguments: 
+%   BITWISE  = '';
+%   CHANNEL  = 0;
+%   HEADERS  = 0;
+%   NODATA   = false;
+%   RANGES   = [];
+%   STORE    = '';
+%   T1       = 0;
+%   T2       = 0;
+%   TYPE     = 1:5;
+%   VERBOSE  = 0;
+%   DONTREAD = {};
+%   EXCLUSIVELYREAD = {};
+%   CHANNELS = 0;
+%   STREAMSWITHLIMITEDCHANNELS ={''};
+%   SORTNAME = 'TankSort';
+
+
+% Updates
+% 20220201: Fixed issue for several wrong trial numbers in Bac_20210826
+% 20170531: Added Broadband filtering and did some major restructuring for stream_state_info separation
+% 20170515: Fixed bug in chopping streamed data into trials (was using the same sample for 
+%           end of this as well as for beginning of next trial)
 % Danial Arabali & Lukas Schneider
 
 drive=handles.drive;
@@ -12,7 +54,6 @@ monkey=handles.monkey_phys;
 data_path                   = [drive 'Data' filesep]; 
 
 %% crate folders
-%wcfolder                   = [data_path 'Sortcodes' filesep monkey filesep date_str filesep 'WC' filesep];
 plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep date_str filesep];
 TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep date_str filesep block];
 matfromTDT_folder               = strcat([data_path monkey '_mat_from_TDT']);
@@ -90,7 +131,7 @@ if handles.SpikesFromWCdirectly
     data.snips.(snipfield{1}).ts        =SPK.spiketimes;
     disp('Spikes taken directly from WC');
 elseif exist(plxfile,'file')
-    SPK=PLX2SPK(plxfile);            % convert the sorted plexon file into spkobj-format; merge the new sorted waveforms with the old SPKOBJ to geht thresholds and noiselevels as well.
+    SPK=PLX2SPK(plxfile);            % convert the sorted plexon file into spkobj-format; merge the new sorted waveforms with the old SPKOBJ to get thresholds and noiselevels as well.
     %backscaling (see DAG_create_PLX)
     if strcmp(PLXVERSION,'from_BB')
         load([plxfilefolder 'WC' filesep 'concatenation_info'],'wf_scale');
@@ -182,8 +223,7 @@ else
     
     
     % strange bug for counters in TDT not being set correctly in several trials in the beginning, 
-    % probably due to random digital input (no idea where idea where that
-    % came from): Bac_20210826
+    % probably due to random digital input (no idea where that came from): Bac_20210826
     if any(Trials<1)
         invalid=        Trials<1;
         Trials(invalid)       =[];
@@ -289,7 +329,7 @@ First_trial_INI=struct(stream_fieldnames_first_INI{:});             % because th
 for r=1:numel(unique_runs)          % looping through runs
     clear TDT_DATA DATA_TO_APPEND
     runtrials=Trials(Runs==unique_runs(r))'; % Only the trials that corrspond to current run
-    Invalidtrials=[];               % keeping track of trials that we want to exclude afterwards (Inconsistency between MP and TDT, FIX_ACQ_start_time empty)
+    Invalidtrials=[];                        % keeping track of trials that we want to exclude afterwards (Inconsistency between MP and TDT, FIX_ACQ_start_time empty)
     for tr=runtrials
         tr_block=tr_block+1;
         % check consistency for block and run trial
@@ -471,7 +511,7 @@ datafilt = DAG_median_filter(datafilt,n);
 
 % downsampling --> easy way
 % duplicate first 12 samples => in the resampling step the nanmean corresponds to that time point
-% also, cut off last 12 samples (to have the same length in the as in the input)
+% also, cut off last 12 samples (to have the same length as the input)
 datafilt=[datafilt(1:round(SR_factor/2)) datafilt(1:end-round(SR_factor/2))];
 
 %% How does it work in TDT to assign LFP samples... Can't get to the same amount (+/- 1 sample)?

@@ -45,7 +45,7 @@ for ii = 1:length(channels)
     
     %% reduce to only current block times
     blocksamples=handles.blocksamplesperchannel{ch}(handles.block,:);
-    idx=index*sr/1000>=blocksamples(1) & index*sr/1000<=blocksamples(2); %% index at this point is in milliseconds....???
+    idx=index*sr/1000>=blocksamples(1) & index*sr/1000<=blocksamples(2); % index at this point is in milliseconds
     index=index(idx)-blocksamples(1)*1000/sr;
     cluster_class=cluster_class(idx,:);
     spikes=spikes(idx,:);
@@ -68,10 +68,6 @@ for ii = 1:length(channels)
     % waveforms
     wf=[wf; single(spikes)];
     SPK.waveforms=wf;
-    %
-    %         if ~isempty(cluster_class)
-    %             maxsortid=max(cluster_class(:,1))+1; %% works, because only maximum two iterations...
-    %         end
 end
 SPK.samplingrate=sr;
 SPK.physicalunit='µV';

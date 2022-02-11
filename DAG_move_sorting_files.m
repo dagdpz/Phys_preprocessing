@@ -1,6 +1,6 @@
 function success=DAG_move_sorting_files(old_location,new_location,deleteorigin,folders_to_not_move,fileparts_to_not_move)
-
-
+% This code was used to move Sortcodes to Y:\Data\Sortcodes and should not be needed any more
+% f.e.:
 % new_location='Y:\Data\TDTtanks\Flaffus_phys\20160722\';
 % old_location='Y:\Data\Sortcodes\Flaffus_phys\20160722\';
 if nargin<3
@@ -32,7 +32,6 @@ end
 D=D(3:end);
 D_dirs=D([D.isdir]);
 D_files=D(~[D.isdir]);
-
 
 %% copy/move directories
 if ~isempty(D_dirs)
@@ -67,8 +66,7 @@ if ~isempty(D_files)
     end
     
     D_files=D_files(to_move_idx);
-    for d=1:numel(D_files)
-        
+    for d=1:numel(D_files)        
         copy_file_successful = copyfile([old_location D_files(d).name],[new_location D_files(d).name]);
         if copy_file_successful && deleteorigin
             delete([old_location D_files(d).name]);

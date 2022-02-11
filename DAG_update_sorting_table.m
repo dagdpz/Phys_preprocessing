@@ -12,11 +12,11 @@ function DAG_update_sorting_table(monkey,dates)
 
 dag_drive=DAG_get_server_IP;
 
-main_folder=[dag_drive filesep 'Data' filesep monkey '_combined_monkeypsych_TDT' filesep];
-main_folder_content=dir(main_folder);
-main_folder_content=main_folder_content([main_folder_content.isdir]);
+main_folder             =[dag_drive filesep 'Data' filesep monkey '_combined_monkeypsych_TDT' filesep];
+main_folder_content     =dir(main_folder);
+main_folder_content     =main_folder_content([main_folder_content.isdir]);
 main_folder_content(1:2)=[];
-subfolders={main_folder_content.name};
+subfolders              ={main_folder_content.name};
 if nargin>=2
     subfolders=subfolders(cellfun(@(x) ismember(str2double(x),dates),subfolders));
 end
@@ -53,7 +53,6 @@ end
 old_table(1,:)=sorting_table;
 
 %% load same cells
-%% nonmatching channels for same cells would lead to an error
 clear Session channel blocks sortcodes
 run([DBfolder  filesep 'Same_cells_' monkey(1:3)]);
 Same_cells=struct('Session',Session,'channel',channel,'blocks',blocks,'sortcodes',sortcodes,'Neuron_ID',cell(size(Session)));
@@ -63,8 +62,7 @@ clear Session block channels z
 run([DBfolder  filesep 'Electrode_depths_' monkey(1:3)]);
 Electrode_depths=struct('Session',Session,'block',block,'channels',channels,'z',z);
 
-%% Check for apparent mistakes (nonmatching channels for same cells would lea)
-
+%% Check for apparent mistakes (nonmatching channels for same cells would lead to errors later on)
 for c=1:numel(Electrode_depths)
     if numel(Electrode_depths(c).channels) ~= numel(Electrode_depths(c).z)
         disp(['Problem in ' num2str(Electrode_depths(c).Session) ', block ' num2str(Electrode_depths(c).block), ' channels and depths dont match']);
@@ -82,10 +80,7 @@ for c=1:numel(Same_cells)
             disp(['Problem in ' num2str(Same_cells(c).Session) ', channel ' num2str(Same_cells(c).channel), ' block ' num2str(Same_cells(c).blocks(s2)) ', same cell in different depths']);
         end
     end
-    
 end
-
-
 
 n_row=1;
 new_sessions_counter=0;
@@ -104,9 +99,9 @@ for s =1:numel(subfolders)
         matfile=matfiles{f};
         load([main_folder date filesep matfile])
         
-        str_idx=strfind(matfile,'_');
-        Run=str2double(matfile(str_idx(1)+1:str_idx(1)+2));
-        block=str2double(matfile(str_idx(3)+1:str_idx(3)+2));
+        str_idx =strfind(matfile,'_');
+        Run     =str2double(matfile(str_idx(1)+1:str_idx(1)+2));
+        block   =str2double(matfile(str_idx(3)+1:str_idx(3)+2));
         
         d=find(ismember([Electrode_depths.Session],session) &...
             ismember([Electrode_depths.block],block));
@@ -114,9 +109,8 @@ for s =1:numel(subfolders)
             continue
         end
         ch_considered=Electrode_depths(d).channels';
-        %% here the fun starts
+        
         %% retrieving channels and units recorded in this run
-        %n_chans = size(trial(1).TDT_eNeu_t,1);
         channel_units=[0 0];
         channel_units(1,:)=[];
         trial=trial(~cellfun(@isempty,{trial.TDT_states})); %% some trials are empty...
@@ -151,7 +145,6 @@ for s =1:numel(subfolders)
                 cellrepeated=arrayfun(@(x) any(x.Session==session) && any(x.channel==channel) && any(x.blocks==block & x.sortcodes==sortcode),Same_cells);
                 if ~any(cellrepeated) %% unit is unique
                     unit_per_session_counter=unit_per_session_counter+1;
-                    
                     sorting_table{n_row,idx.Neuron_ID}=[monkey(1:3) '_' date  '_' sprintf('%02d',unit_per_session_counter)];
                     sorting_table{n_row,idx.Times_same_unit}=1;
                 else
@@ -162,9 +155,9 @@ for s =1:numel(subfolders)
                         n_Times_same_unit_counter=1;
                     else %% this cell was already processed
                         if isempty(Same_cells(cellrepeated).Neuron_ID)
-                            a=1;
+                            a=1; % this is a rather common type of bug (caused by incorrect same_cells entries), that should be displayed, just dont remember the exact origin.
                         else
-                        n_Times_same_unit_counter=sum(ismember(sorting_table(1:end-1,idx.Neuron_ID),Same_cells(cellrepeated).Neuron_ID))+1;
+                            n_Times_same_unit_counter=sum(ismember(sorting_table(1:end-1,idx.Neuron_ID),Same_cells(cellrepeated).Neuron_ID))+1;
                         end
                     end
                     sorting_table{n_row,idx.Neuron_ID}=Same_cells(cellrepeated).Neuron_ID;

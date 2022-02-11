@@ -1,4 +1,7 @@
 function plx_extension_per_block=ph_get_new_plx_extension(folder,version)
+% This function is automatically run when creating a new plx file, and will
+% usually return 1, unless there are already existing plx files of the same
+% version for this session & block. 
 
 folder_content=dir([folder '*.plx']);
 folder_content=folder_content(~[folder_content.isdir]);
@@ -23,7 +26,6 @@ else
         blocks(f)= str2double(filenames{f}(underscore_indexes(end)+1:end-7));
         extensions(f)= str2double(filenames{f}(strfind(filenames{f},'-')+1:end-4));
     end
-    
     unique_blocks=unique(blocks);
     for b=1:numel(unique_blocks)
         ex=max(extensions(blocks==unique_blocks(b)))+1;

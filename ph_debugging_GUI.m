@@ -1,4 +1,7 @@
 function ph_debugging_GUI
+%check if this function still works...
+%potentially remove last two (unused) subfunctions
+
 f = figure('Visible','on','units','normalized','outerposition',[0 0 1 1],'name','Phys preprocessing debug GUI','KeyPressFcn',@keycall);
 Gui_version(0,0,0)
 
@@ -12,40 +15,26 @@ LFP_path='Load file first';
 WC_path='';
 WC_data=[];
 LFP_data=[];
-
-
-spike_data=[];
-
-% spikes=[];
-% index=[];
-% cluster_class=[];
-
 spike_data=[];
 spike_t =[];
 cluster =[];
 SU={''};
-
 WC_sr=24414.0625;
 LFP_sr=WC_sr/24;
-
 LFP_block_samples=0;
 WC_block_t=0;
-
 WC_thr1=0;
 WC_thr2=0;
 WC_ylim=[0 1];
 LFP_ylim=[0 1];
 
 
-uicontrol('Style','pushbutton','String','Plot',     'units','normalized','Position',[0.4,0.9,0.08,0.05],'Callback',@plot_it);
-uicontrol('Style','pushbutton','String','Previous Window', 'units','normalized','Position',[0.5,0.9,0.08,0.05],'Callback',@previous_window);
-uicontrol('Style','pushbutton','String','Next Window',     'units','normalized','Position',[0.6,0.9,0.08,0.05],'Callback',@next_window);
-
-uicontrol('Style','pushbutton','String','Load',     'units','normalized','Position',[0.8,0.9,0.08,0.05],'Callback',@load_file);
-
+uicontrol('Style','pushbutton','String','Plot',             'units','normalized','Position',[0.4,0.9,0.08,0.05],'Callback',@plot_it);
+uicontrol('Style','pushbutton','String','Previous Window',  'units','normalized','Position',[0.5,0.9,0.08,0.05],'Callback',@previous_window);
+uicontrol('Style','pushbutton','String','Next Window',      'units','normalized','Position',[0.6,0.9,0.08,0.05],'Callback',@next_window);
+uicontrol('Style','pushbutton','String','Load',             'units','normalized','Position',[0.8,0.9,0.08,0.05],'Callback',@load_file);
 
 filename_box=uicontrol('Style','text','String',LFP_path,'units','normalized','Position',[0.1,0.85,0.8,0.03]);
-
 
 uicontrol('Style','text','String','Start (s)','units','normalized','Position',[0.1,0.95,0.08,0.02]);
 textboxes.start_t       = uicontrol('Style','edit','units','normalized','String',num2str(start_t),'Position',[0.1,0.9,0.08,0.05],'Callback',@apply_start_t);
@@ -54,17 +43,11 @@ textboxes.window_length = uicontrol('Style','edit','units','normalized','String'
 uicontrol('Style','text','String','Channel','units','normalized','Position',[0.3,0.95,0.08,0.02]);
 textboxes.channel       = uicontrol('Style','edit','units','normalized','String',num2str(channel),'Position',[0.3,0.9,0.08,0.05],'Callback',@apply_channel);
 
-
 panhandle = uipanel('Position', [0.05,0.05,0.9,0.8]);
-sp1 = subplot(2,3,1:2,'Parent', panhandle);
-        hold on
-sp2 = subplot(2,3,4:5,'Parent', panhandle);
-        hold on
-
+sp1 = subplot(2,3,1:2,'Parent', panhandle);hold on;
+sp2 = subplot(2,3,4:5,'Parent', panhandle);hold on;
 sp3 = subplot(2,3,3,'Parent', panhandle);
 sp4 = subplot(2,3,6,'Parent', panhandle);
-
-    
 
     function load_file(source,~)
         temp_path=pwd;
@@ -73,22 +56,20 @@ sp4 = subplot(2,3,6,'Parent', panhandle);
         cd(temp_path);
         [FP,session]=fileparts(folders{:});
         [FP,monkey]=fileparts(FP);
-        
-        
-        %% now load
-        %% a) LFP data from preprocessed trial_structure
+                
+        % now load
+        % a) LFP data from preprocessed trial_structure
         LFP_path=fullfile('Y:','Data',[monkey '_mat_from_TDT'],num2str(session));
         LFP_data=load_LFP;
         
-        %% b) preprocessed (filtered) broadband for WC
+        % b) preprocessed (filtered) broadband for WC
         WC_path=fullfile('Y:','Data','Sortcodes',monkey,num2str(session));
         WC_data=load_WC;
         
-        %% c) spikes (MU and SU)
-        
+        % c) spikes (MU and SU)
         [spike_data,spike_t,cluster,SU]=load_spikes;
         
-        %% Now plot!
+        % Now plot!
         plot_it;
         set(filename_box,'String',LFP_path);
     end
@@ -133,9 +114,7 @@ sp4 = subplot(2,3,6,'Parent', panhandle);
     end
 
     function [spike_data,spike_t,cluster,SU]=load_spikes
-        
         SU_files=dir([WC_path filesep 'WC' filesep 'dataspikes_ch' num2str(channel, '%03.f') '*SU_neg.mat']);
-        
         spikes=[];
         index=[];
         cluster_class=[];
@@ -168,9 +147,6 @@ sp4 = subplot(2,3,6,'Parent', panhandle);
     end
 
     function plot_it(~,~)
-        %        end_t=floor(end_t*LFP_sr)/LFP_sr;
-        %         wc_indexes=(round(start_t*WC_sr+1):round(end_t*WC_sr));
-        %         lfp_indexes=(round(start_t*LFP_sr+1):round(end_t*LFP_sr));
         wc_bins=1/WC_sr:1/WC_sr:numel(WC_data)/WC_sr;
         lfp_bins=1/LFP_sr:1/LFP_sr:numel(LFP_data)/LFP_sr;
         cla(sp1)
@@ -178,10 +154,7 @@ sp4 = subplot(2,3,6,'Parent', panhandle);
         plot(sp1,[wc_bins(1) wc_bins(end)],[-WC_thr1 -WC_thr1],'color','r');
         plot(sp1,[wc_bins(1) wc_bins(end)],[-WC_thr2 -WC_thr2],'color','g');
         plot(sp2,lfp_bins,LFP_data);
-        
         plot(sp1, repmat(WC_block_t,2,1),repmat(WC_ylim',1,numel(WC_block_t)),'k');
-        
-        
         title(sp1,'Waveclus prefiltered');
         title(sp2,'LFP');
         set_axes_limits;
@@ -207,11 +180,9 @@ sp4 = subplot(2,3,6,'Parent', panhandle);
         plot(sp4,spike_data(idx_s,:)','g');
         title(sp3,'MUs');
         title(sp4,'SUs');
-        
     end
 
     function keycall(source,event)
-        
         key = event.Key; % get the pressed key value
         if strcmp(key,'leftarrow')
             previous_window; % left value
@@ -254,26 +225,14 @@ end
 
 function Gui_version(~, ~, ~)
 
-ha = axes('units','normalized', ...
-    'position',[0 0 1 1]);
+ha = axes('units','normalized', 'position',[0 0 1 1]);
 uistack(ha,'bottom');
 colormap gray
-set(ha,'handlevisibility','off', ...
-    'visible','off')
+set(ha,'handlevisibility','off', visible','off')
 end
 
+
 function ph_plot_BB(session2read,stream_name,channels,save2dir)
-if false
-    session2read='Y:\Data\TDTtanks\Bacchus_phys\20201217';
-    stream_name='Broa';
-    channels=[1,9,19,32];
-    save2dir='Y:\Projects\Debugging\Bacchus_20201217';
-    %
-    session2read='Y:\Data\TDTtanks\Bacchus_phys\20201209';
-    stream_name='Broa';
-    channels=[33,34,35,45,46];%[1,9,19,32];
-    save2dir='Y:\Projects\Debugging\Bacchus_20201209';
-end
 N_ch_per_fig=5;
 filtertype='filtered'; %'broadband';
 
@@ -331,14 +290,13 @@ switch filtertype
         sr=samplingrate;
 end
 t_bins=1/sr:1/sr:size(data_plotted,2)/sr;
+
 for ch_split=1:ceil(numel(all_channels)/N_ch_per_fig)
     ch_idx=((ch_split-1)*N_ch_per_fig+1):ch_split*N_ch_per_fig;
     if ch_split==ceil(numel(all_channels)/N_ch_per_fig)
         ch_idx=((ch_split-1)*N_ch_per_fig+1):numel(all_channels);
     end
     channels=all_channels(ch_idx);
-    
-    
     data= data_plotted(ch_idx,:);
     figure('units','normalized','outerposition',[0 0 1 1]);
     clear thresholds
@@ -359,8 +317,6 @@ for ch_split=1:ceil(numel(all_channels)/N_ch_per_fig)
             line([x x],ylims,'color','g');
         end
     end
-    %     export_fig([save2dir, filesep, 'concatenated_raw ch '  num2str(channels)], '-pdf','-transparent');
-    %     close(gcf);
     
     N_bins=1000;
     norm_factor=size(data,2)/sr/N_bins;
@@ -387,11 +343,10 @@ for ch_split=1:ceil(numel(all_channels)/N_ch_per_fig)
     end
     
     linkaxes(sph,'x');
-    %     export_fig([save2dir, filesep, 'concatenated_FR_'  num2str(STD) 'stds ch '  num2str(channels)], '-pdf','-transparent');
-    %     close(gcf);
 end
 
 end
+
 
 function  Output_stream=filter_function(Input_stream,samplingrate,SR_factor,N_samples_original,preprocessing_settings)
 %bandstop filter 50 Hz
@@ -407,9 +362,6 @@ datafilt=  filtfilt(b,a, double(datafilt));
 datafilt=  filtfilt(b,a, datafilt);
 
 % lowpass
-% n = floor(samplingrate/preprocessing_settings.LFP_LP_median_filter);
-% datafilt = DAG_median_filter(datafilt,n);
-
 [b,a]=butter(4, preprocessing_settings.LFP_LP_median_filter*2/samplingrate, 'low'); % 'low', 'high
 datafilt=  filtfilt(b,a, datafilt);
 
@@ -419,9 +371,6 @@ datafilt=  filtfilt(b,a, datafilt);
 % also, cut off last 12 samples (to have the same length in the as in the input)
 datafilt=[datafilt(1:round(SR_factor/2)) datafilt(1:end-round(SR_factor/2))];
 
-%% How does it work in TDT to assign LFP samples... Can't get to the same amount (+/- 1 sample)?
-% Problem occurs, when numel(datafilt)/SR_factor<=N_samples_original
-% Try without cutting off last 12 samples first ?
 RR=N_samples_original*SR_factor-numel(datafilt);
 if abs(RR)>50000
     disp(['LFP and Boradband time do not match! t(LFP-Broa)=~ ' num2str(round(RR/24000)) 's']);
@@ -438,36 +387,3 @@ end
 %take nanmean of every 24 samples
 Output_stream=nanmean(reshape(datafilt,SR_factor,numel(datafilt)/SR_factor),1);
 end
-
-
-%
-% for b=1:numel(blocknames)
-%     data= dat.(stream_name){b};
-%     channels=dat.([stream_name '_ch']){b};
-%     figure;
-%     clear thresholds
-%     for c=1:size(data,1)
-%         subplot(numel(channels),1,c)
-%         hold on;
-%         thresholds(c)=3*std(data(c,:));
-%         means(c)=mean(data(c,:));
-%         title(['channel' num2str(channels(c))])
-%         plot(data(c,:)) %% add threshold
-%         line([0 size(data,2)],[means(c)-thresholds(c) means(c)-thresholds(c)],'color','r')
-%     end
-%     export_fig([save2dir, filesep, blocknames_correctly_sorted{b} '_raw'], '-pdf','-transparent');
-%     close(gcf);
-%
-%     figure;
-%     for c=1:size(data,1)
-%         subplot(numel(channels),1,c)
-%         indexes=data(c,:)<(means(c)-thresholds(c));
-%         idx_int=find(indexes);
-%         spiketimes=idx_int([true diff(idx_int)>1]);
-%         histc=hist(spiketimes,100);
-%         plot(histc);
-%     end
-%     export_fig([save2dir, filesep, blocknames_correctly_sorted{b} '_FR'], '-pdf','-transparent');
-%
-%     close(gcf);
-% end

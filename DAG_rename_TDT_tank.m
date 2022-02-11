@@ -2,8 +2,7 @@ function out_date_range = DAG_rename_TDT_tank(drive,monkey,temp_date_range)
 % restructures and renames folder formats of physiology data recorded with
 % Synapse (New TDT software since 2017, first introduced in setup 3 only).
 
-Main_path = [drive ':' filesep 'Data' filesep 'TDTtanks' filesep monkey ];
-
+Main_path = [drive 'Data' filesep 'TDTtanks' filesep monkey ];
 folders=dir(Main_path);
 foldernames={folders(cellfun(@numel, {folders.name})>8).name};
 for k=1:size(foldernames,2)
@@ -16,10 +15,7 @@ for FN=1:numel(foldernames)
 end
 end
 
-
 function rename_files(Tank_path)
-% rename_files('X:\Data\TDTtanks\Cornelius_phys\Cornz-160506-110358 - Copy')
-
 Tank_folder = dir(Tank_path);
 Tank_folder = Tank_folder([Tank_folder.isdir]);
 Blocks = {Tank_folder.name};

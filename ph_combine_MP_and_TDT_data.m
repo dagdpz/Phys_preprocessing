@@ -35,9 +35,6 @@ SORTNAME                    = 'Plexsormanually';
 % (needs to have extension '-01', if not existing it takes SORTNAME)
 
 
-user                        = getUserName;
-disp(['Drive= ', drive, ' User= ', user, ' Monkey= ', monkey]);
-
 DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_phys_dpz' filesep];
 base_path                   = [drive 'Data' filesep]; % [drive ':\Data\'];
@@ -56,11 +53,6 @@ for c=1:size(plx_file_table_to_use,2)
     idx.(column_name)=DAG_find_column_index(plx_file_table_to_use,column_name);
 end
 settings=ph_get_preprocessing_settings(monkey_phys,'executed');
-% % upper might interfere here, but we are not really using variable
-% % inputs anyway at this stage
-% for i = 1:2:length(varargin)
-%     eval([upper(varargin{i}) '=varargin{i+1};']);
-% end
 if DISREGARDLFP
     DONTREAD=[DONTREAD, {'BROA','Broa','LFPx'}];
     DONTREAD=unique(DONTREAD);
@@ -122,7 +114,6 @@ for fol=1:numel(session_folders)
         end
         TDT_trial_struct_input      = {'SORTNAME',SORTNAME,'DONTREAD',DONTREAD,'EXCLUSIVELYREAD',EXCLUSIVELYREAD,'CHANNELS',CHANNELS,...
             'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'PLXEXTENSION',PLXEXTENSION,'DISREGARDLFP',DISREGARDLFP,'DISREGARDSPIKES',DISREGARDSPIKES};
-        %TDT_trial_struct(base_path,[monkey '_phys'],date,block,spike_settings,TDT_trial_struct_input{:})
         TDT_trial_struct(handles,date,block,spike_settings,TDT_trial_struct_input{:})
         
         %% storing used sortcode information in plx table

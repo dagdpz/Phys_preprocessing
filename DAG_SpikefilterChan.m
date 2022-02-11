@@ -1,16 +1,18 @@
 function DAG_SpikefilterChan(handles)
 
-limit_to_channels=handles.channels_to_process;
+
 %% simplifying handles
-stop_f      = handles.WC.linenoisefrequ;
-sr          = handles.WC.sr;
-hpcutoff    = handles.WC.hpcutoff;
-lpcutoff    = handles.WC.lpcutoff;
-tf_factor   = handles.WC.transform_factor;
-rawname     = handles.rawname;
-dtyperead   = handles.dtyperead;
-dtypewrite  = handles.dtypewrite;
-hp=handles.WC.hp;
+limit_to_channels   = handles.channels_to_process;
+stop_f              = handles.WC.linenoisefrequ;
+sr                  = handles.WC.sr;
+hpcutoff            = handles.WC.hpcutoff;
+lpcutoff            = handles.WC.lpcutoff;
+tf_factor           = handles.WC.transform_factor;
+rawname             = handles.rawname;
+dtyperead           = handles.dtyperead;
+dtypewrite          = handles.dtypewrite;
+hp                  = handles.WC.hp;
+
 %% defining number of samples for median filter
 if strcmp(hp,'med')
     n = floor(sr/hpcutoff);
@@ -28,7 +30,7 @@ else
     files = {files.name};
 end
 
-warning off % annoying concatenation warnings?
+warning off % turn off annoying concatenation warnings
 
 for i = 1 : length(files)
     tic
@@ -40,36 +42,29 @@ for i = 1 : length(files)
     end
     switch handles.sys
         case 'TD'
-            channel_file_handle = fopen([handles.WC_block_folder filename], 'r');                       %'r' - read the indicated channel file
+            channel_file_handle = fopen([handles.WC_block_folder filename], 'r');      %'r' - read the indicated channel file
             data = fread(channel_file_handle, [dtyperead '=>' dtyperead]);             %reads out the data, int16 - class of input and output values
             fclose(channel_file_handle);
-            
             data = double(data)/tf_factor;
-            
             if handles.WC.iniartremovel
                 data(1:40) = nanmean(data(41:80));
             end
     end
     
-    if size(data,2) == 1 % for only one channel?
+    if size(data,2) == 1 % for only one channel? this should either always or never be the case...
         data = data';
     end
     
     if handles.WC.linenoisecancelation
-        
         [b,a]=ellip(2,0.1,40,[stop_f-1 stop_f+1]*2/sr,'stop');
         data=filtfilt(b,a,data);
         [b,a]=ellip(2,0.1,40,[2*stop_f-1 2*stop_f+1]*2/sr, 'stop');
         data=filtfilt(b,a,data);
         [b,a]=ellip(2,0.1,40,[3*stop_f-1 3*stop_f+1]*2/sr, 'stop');
         data=filtfilt(b,a,data);
-        
     end
     
     if strcmp(hp,'med')
-        %         xx = median_filter(data,n);
-        %         xxend = medfilt1(data(end-n:end),n);
-        %         xx = [xx(ceil(n/2):end) xxend(ceil(n/2)+2:end)];
         xx = DAG_median_filter(data,n);
         data = data-xx;
         clear xx;

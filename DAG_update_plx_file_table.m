@@ -1,14 +1,19 @@
 function DAG_update_plx_file_table(dates,handles)
-% INPUT: update_sorting_table('Flaffus',{'20160608','20160609'})
-% automatically updates 'Fla_sorted_neurons.xlsx' in the corresponding dropbox path
-% note that this function takes information from the "final_sorting" sheet,
-% and overrides "automatic_sorting" sheet, using:
-% "final_sorting" as basis and overriding with information accessable from
-% Electrode_depths.m, Same_cells.m as well as sortcodes from the corresponding PLX file.
-% Therefore, manually added informations (such as SNR, stability, and single ranking as well as grid hole positions) are kept
-% Before the automatic information can be processed further, the user is
-% asked to copy the "automatic sorting" sheet to "final sorting", to make
-% sure no valuable information is lost in the automatic process
+% This function is used to automatically update the plx file table
+% INPUT: 
+% dates is a cell array of sessions to be updated; f.e.: dates={'20160608','20160609'}
+% handles is a structure containing (at least) the following fields:
+% handles.monkey_phys:                  
+%           monkey name with 'phys' affix, f.e.: 'Flaffus_phys'
+% handles.preferred_SortType:           
+%           Preferred type of sorting (will be taken if present) 
+%           Possible values: 'Snippets','from_BB','realigned','none'
+% handles.preferred_Plx_file_extension: 
+%           if several (-01,-02,-03) versions are present, preference will be given to
+%           a) 'first'      : the lowest number
+%           b) 'last'       : the highest number
+%           c) 'latest'     : the latest created version
+
 monkey=handles.monkey_phys;
 if nargin<2
     handles.preferred_SortType='Snippets';
@@ -25,7 +30,6 @@ if nargin>=2
     subfolders=subfolders(cellfun(@(x) ismember(str2double(x),dates),subfolders));
 end
 
-
 DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
 sheets_available={};
@@ -33,11 +37,11 @@ if exist([DBfolder  monkey(1:3) '_plx_files.xlsx'],'file')
     [~, sheets_available]=xlsfinfo([DBfolder  monkey(1:3) '_plx_files.xlsx']);
 end
 if ismember('to_use',sheets_available)
-    [~, ~, sorting_table]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'to_use');
+    [~, ~, plx_file_table]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'to_use');
 else
-    sorting_table={'Monkey','Date','Block','Sorttype','Plx_file_extension'};
+    plx_file_table={'Monkey','Date','Block','Sorttype','Plx_file_extension'};
 end
-old_table=sorting_table;
+old_table=plx_file_table;
 dateindex_old=DAG_find_column_index(old_table,'Date');
 if ~isempty(dateindex_old)
     dates_old=[old_table{2:end,dateindex_old}];
@@ -45,15 +49,13 @@ if ~isempty(dateindex_old)
 else
     unique_old_dates=[];
 end
-sorting_table=sorting_table(1,:);
+plx_file_table=plx_file_table(1,:);
 
-unit_names={'a','b','c','d','e','f','g','h','i','j','k'};
-
-for c=1:size(sorting_table,2)
-    column_name = strrep(sorting_table{1,c},' ','_');
+for c=1:size(plx_file_table,2)
+    column_name = strrep(plx_file_table{1,c},' ','_');
     column_name = strrep(column_name,'?','');
-    sorting_table{1,c}=column_name;
-    idx.(column_name)=DAG_find_column_index(sorting_table,column_name);
+    plx_file_table{1,c}=column_name;
+    idx.(column_name)=DAG_find_column_index(plx_file_table,column_name);
 end
 
 n_row=1;
@@ -69,8 +71,8 @@ for s =1:numel(subfolders)
     plxfiles={plxfiles.name};
     
     %% take only plx files with a hyphen in their name
-clear file_valid
-file_valid=logical([]);
+    clear file_valid
+    file_valid=logical([]);
     for f=1:numel(plxfiles)
         hyphenidx=strfind(plxfiles{f},'-');
         if any(hyphenidx)
@@ -83,8 +85,8 @@ file_valid=logical([]);
     plxfiles=plxfiles(file_valid);
     
     %% find corresponding block for each plx file
-clear blocks
-blocks=[];
+    clear blocks
+    blocks=[];
     for f=1:numel(plxfiles)
         startidx=strfind(plxfiles{f},'blocks_')+7;
         hyphenidx=strfind(plxfiles{f}(startidx:end),'-');
@@ -98,9 +100,9 @@ blocks=[];
         blockdates=plxfiledates(blocks==b);
         
         %% select which is the desired plxfile
-        issnippet=cellfun(@(x) ~isempty(strfind(x,[date '_blocks'])),blockfiles);
-        is_WC=cellfun(@(x) ~isempty(strfind(x,[date '_from_BB_blocks'])),blockfiles);
-        is_realigned=cellfun(@(x) ~isempty(strfind(x,[date '_realigned_blocks'])),blockfiles);
+        issnippet       = cellfun(@(x) ~isempty(strfind(x,[date '_blocks'])),blockfiles);
+        is_WC           = cellfun(@(x) ~isempty(strfind(x,[date '_from_BB_blocks'])),blockfiles);
+        is_realigned    = cellfun(@(x) ~isempty(strfind(x,[date '_realigned_blocks'])),blockfiles);
         
         %% only include preferred SortType if present
         if strcmp(handles.preferred_SortType,'Snippets') && any(issnippet)
@@ -149,15 +151,15 @@ blocks=[];
         
         %% add info to table
         n_row=n_row+1;
-        sorting_table{n_row,idx.Monkey}=monkey(1:3);
-        sorting_table{n_row,idx.Date}=str2num(date);
-        sorting_table{n_row,idx.Block}=b;
-        sorting_table{n_row,idx.Sorttype}=Sorttype;
-        sorting_table{n_row,idx.Plx_file_extension}=Plx_file_extension;
+        plx_file_table{n_row,idx.Monkey}=monkey(1:3);
+        plx_file_table{n_row,idx.Date}=str2num(date);
+        plx_file_table{n_row,idx.Block}=b;
+        plx_file_table{n_row,idx.Sorttype}=Sorttype;
+        plx_file_table{n_row,idx.Plx_file_extension}=Plx_file_extension;
     end
 end
 
-[complete_mastertable]=DAG_update_cell_table(old_table,sorting_table,'Date');
+[complete_mastertable]=DAG_update_cell_table(old_table,plx_file_table,'Date');
 xlswrite([DBfolder filesep monkey(1:3) '_plx_files.xlsx'],complete_mastertable,'to_use');
 end
 

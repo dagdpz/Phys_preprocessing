@@ -11,12 +11,10 @@ run([DBfolder 'Electrode_depths_' monkey_phys(1:3)]);
 channels_to_process=unique([channels{cell2mat(Session)==Session_as_num}]);
 
 %% CREATE PLX FILE(S) from snippets
-%handles.par.sr = 24414.0625; % can this one be taken from the files themselves?
 handles.threshold=threshold;
 handles.sortcodes_folder        = [drive 'Data' filesep 'Sortcodes' filesep monkey_phys filesep Session_as_str filesep];          % path of recordings
 handles.tank_folder             = [drive 'Data' filesep 'TDTtanks'  filesep monkey_phys filesep Session_as_str filesep];
 handles.WC_concatenation_folder = [handles.sortcodes_folder 'WC' filesep];
-%tank = [drive '\Data\TDTtanks' filesep monkey filesep num2str(Session_as_num) '\'];          % path of recordings
 handles.task_times=[];
 if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,'PLXFromSnippets')
     for ii =1:length(recordingnames)
@@ -25,7 +23,7 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
         recname     =['blocks_' block_char];
         disp(['Processing: ' recname]);
         
-        %         state_information = TDTbin2mat_working([drive 'Data\TDTtanks' filesep monkey], num2str(tankname), recordingnames{ii}, 'EXCLUSIVELYREAD',{'SVal'},'SORTNAME', 'Plexsormanually');
+        %  state_information = TDTbin2mat_working([drive 'Data\TDTtanks' filesep monkey], num2str(tankname), recordingnames{ii}, 'EXCLUSIVELYREAD',{'SVal'},'SORTNAME', 'Plexsormanually');
         
         data = TDTbin2mat_working([handles.tank_folder recordingnames{ii}], 'EXCLUSIVELYREAD',{'eNeu','SVal'},'SORTNAME', 'Plexsormanually');
         if ~isfield(data,'snips') || ~isfield(data.snips,'eNeu')
@@ -33,6 +31,8 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
            continue 
         end
         snippets=data.snips.eNeu;
+        
+        %%        For future use: ITI removal for snippets
         %         state_information=data.epocs.SVal;
         %         offs=[];
         %         %% on and offs are in seconds!
@@ -62,19 +62,16 @@ if strcmp(processing_mode,'PLXFromRealignedSnippets') || strcmp(processing_mode,
         
         %% not sure any more what was the reasoning behind it, but apparently we go TDT->WC3->SPK->PLX
         
-        TDT2WC3_from_snippets(handles,snippets);
-        
-        SPK = WC32SPK(handles); %% foldername is now part of the handles...?
+        TDT2WC3_from_snippets(handles,snippets);        
+        SPK = WC32SPK(handles); %% foldername is now part of the handles...
         SPK.int_factor = 1;
         SPK2PLX(SPK,plxfilename);
     end
 end
 
-%% CREATE PLX FILE(S) from WC --> slightly different because WC files are concatinated across blocks with the same electrode depth
+%% CREATE PLX FILE(S) from WC --> slightly different because WC files are concatenated across blocks with the same electrode depth
 if strcmp(processing_mode,'PLXFromWCFromBB')
     handles.threshold ='neg';
-%     handles.main_folder=[drive 'Data\TDTtanks' filesep monkey filesep num2str(Session_as_num) filesep];
-%     handles.WC_concatenation_folder=[handles.main_folder 'WC' filesep];
     blocks_in_this_session=[block{cell2mat(Session)==Session_as_num}];
     temp_handles=handles;
     load([handles.WC_concatenation_folder 'concatenation_info'])
@@ -88,7 +85,6 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
         handles.(fn{:})=  temp_handles.(fn{:});
     end
     
-    %handles.sr=sr;
     for b=blocks_in_this_session
         recname=['blocks_' num2str(b)];
         handles.blocksamplesperchannel=blocksamplesperchannel;
@@ -97,7 +93,6 @@ if strcmp(processing_mode,'PLXFromWCFromBB')
         handles.block=b;
         handles.channels=channels_to_process;
         SPK = WC32SPK_concatenated(handles);
-        %SPK.int_factor = 2;
         
         % rescaling by block and channel!
         for chan=unique(SPK.channelID)'

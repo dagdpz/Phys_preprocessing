@@ -12,37 +12,35 @@ end
 waveforms=[];
 SPK=PLX2SPK(waveform_PLX_file);
 for c=unique(SPK.channelID)'
-    idx=SPK.channelID==c;
-    wave   = SPK.waveforms(idx,:);
-    t      = SPK.spiketimes(idx);
-    [~, idx]=sort(t); % sort the times of a channel and save order
-    wave   = wave(idx,:); % sort the waveforms by this
-    waveforms=[waveforms; wave];
+    idx         = SPK.channelID==c;
+    wave        = SPK.waveforms(idx,:);
+    t           = SPK.spiketimes(idx);
+    [~, idx]    = sort(t); % sort the times of a channel and save order
+    wave        = wave(idx,:); % sort the waveforms by this
+    waveforms   = [waveforms; wave];
 end
 
-spiketimes=[];
-sortID=[];
-channelID=[];
+spiketimes  =[];
+sortID      =[];
+channelID   =[];
 SPK=PLX2SPK(sortcode_PLX_file);
 for c=unique(SPK.channelID)'
     idx=SPK.channelID==c;
     sortID_temp = SPK.sortID(idx);
     t           = SPK.spiketimes(idx);
     [t idx]=sort(t); % sort the times of a channel and save order
-    sortID_temp=sortID_temp(idx);
-    spiketimes=[spiketimes; t];
-    sortID=[sortID; sortID_temp];
-    channelID=[channelID; ones(numel(t),1) * c];
+    sortID_temp =sortID_temp(idx);
+    spiketimes  =[spiketimes; t];
+    sortID      =[sortID; sortID_temp];
+    channelID   =[channelID; ones(numel(t),1) * c];
 end
 
-SPK.waveforms=waveforms/1000;
-SPK.sortID   =sortID;
-SPK.channelID=channelID;
-SPK.spiketimes=spiketimes;
+SPK.waveforms   =waveforms/1000;
+SPK.sortID      =sortID;
+SPK.channelID   =channelID;
+SPK.spiketimes  =spiketimes;
 SPK.samplingrate=24414.0625;
-SPK.int_factor=2;
-
+SPK.int_factor  =2;
 
 SPK2PLX(SPK,sortcode_PLX_file);
-
 end

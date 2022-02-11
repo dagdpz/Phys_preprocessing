@@ -1,4 +1,6 @@
 function phys_gui_execute(handles)
+%% ADD all the potential handles
+
 %% save attempted action
 save_internal(handles,'All_phys_preprocessing_log',handles.monkey_phys,'attempted_');
 dates_to_loop=handles.dates;
@@ -23,6 +25,7 @@ if TODO.SynapseTankToOldFormat
 end
 
 % TODO.TDTSnippetsSortcodeFromPLX ?
+
 if any([PLX_creation{:,2}]) || TODO.WCFromBB
     tank_path = [handles.drive];
     for i=1:numel(dates_to_loop)
@@ -86,7 +89,7 @@ if TODO.Assign_WC_waveforms_to_PLX
     end
 end
 
-if  TODO.UpdateSortcodeExcel % Combine
+if  TODO.UpdateSortcodeExcel % update plx file table
     DAG_update_plx_file_table(dates_to_loop,handles)
 end
 
@@ -117,7 +120,5 @@ if ~exist([handles.drive  'Data' filesep folder filesep subfolder filesep],'dir'
 end
 path=[handles.drive  'Data' filesep folder  filesep subfolder filesep];
 handles=DAG_rmobjects_from_struct(handles);
-save([path executed '_' datestr(clock,'YYYYmmDD-HHMM')],'handles');
-%% save executed action ... where? -> dependent on TODO? Shouldnt safe in combined files folders! (monkey folders - combined/protocol/executed_2020102
-a=1;
+save([path executed '_' datestr(clock,'YYYYmmDD-HHMM')],'handles'); % unfortunately, double _ here, but should not matter
 end

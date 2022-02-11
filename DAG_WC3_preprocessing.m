@@ -3,8 +3,6 @@ function DAG_WC3_preprocessing(Session_as_num,recordingnames,handles_in)
 handles=handles_in;
 
 cell_tracking_distance_limit=handles.WC.cell_tracking_distance_limit;
-
-%monkey=handles.monkey;
 monkey_phys=handles.monkey_phys;
 current_path=pwd;
 drive=DAG_get_server_IP;
@@ -12,7 +10,7 @@ DBpath=DAG_get_Dropbox_path;
 DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
 
 %% load electrode depths for selecting which electrodes are useful
-% AND for defining which blocks should be concatinated per channel
+% AND for defining which blocks should be concatenated per channel
 run([DBfolder 'Electrode_depths_' monkey_phys(1:3)]);
 handles.channels_to_process=unique([channels{cell2mat(Session)==Session_as_num}]);
 channels_to_process=handles.channels_to_process;
@@ -21,15 +19,12 @@ if isempty(handles.channels_to_process)
     return;
 end
 
-
 %% load excel lag table if applicable
 lag_table_string={'Session','Block','lag_seconds'};
 lag_table_num=zeros(size(lag_table_string));
 if exist([DBfolder filesep monkey_phys '_LFP_BROA_comp.xls'],'file')
-    
     [lag_table_num,lag_table_string]=xlsread([DBfolder filesep monkey_phys '_LFP_BROA_comp.xls']);
 end
-
 
 %% folder definitions
 handles.sortcodes_folder        = [drive 'Data' filesep 'Sortcodes' filesep monkey_phys filesep num2str(Session_as_num) filesep];          % path of recordings
@@ -87,7 +82,6 @@ end
 
 blocks_in_this_session=[block{cell2mat(Session)==Session_as_num}];
 
-
 if ~exist(handles.WC_concatenation_folder,'dir')
     mkdir(handles.sortcodes_folder,'WC');
 end
@@ -100,7 +94,7 @@ for b=1:numel(blocks_in_this_session)
     channels_in_this_session(blocks_in_this_session(b))=channels_temp(b);
 end
 
-%% here we go through channels to concatinate data from same channel in same depth!
+%% here we go through channels to concatenate data from same channel in same depth!
 for ch=channels_to_process
     handles.current_channel = ch;
     previous_blocks_depth=0;
@@ -120,11 +114,10 @@ for ch=channels_to_process
     %% looping through all different electrode locations in this channel
     for f=1:numel(electrode_locations_to_process)
         handles.current_blocks=electrode_locations_to_process{f};
-        handles.current_channel_file = f;
-        
+        handles.current_channel_file = f;        
         channelfile=[sprintf('%03d',handles.current_channel) '_' num2str(handles.current_channel_file)];
-        
-        handles.WC.sr=handles.sr_per_block{handles.current_blocks(1)}; % here we make sure real TDT sr is taken; so this info needs to be saved
+        % here we make sure real TDT sr is taken; so this info needs to be saved
+        handles.WC.sr=handles.sr_per_block{handles.current_blocks(1)}; 
         
         %% correct state onsets...
         blockstart_samples=0;
@@ -141,7 +134,6 @@ for ch=channels_to_process
         
         %% Detect and cluster SUs and MUs individually
         threshold_steps={'SU';'MU'};
-        
         for s=1:numel(threshold_steps)
             threshold_step=threshold_steps(s);
             handles.current_threshold_step=threshold_step{:};
@@ -181,10 +173,10 @@ for ch=channels_to_process
         clear tmp
         for k=1:numel(feature_types)
             load([handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_' feature_types{k} '.mat']);
-            tmp.spikes{k}=spikes;
-            tmp.index{k}=index;
-            tmp.thr{k}=thr;
-            tmp.par{k}=par;
+            tmp.spikes{k}       =spikes;
+            tmp.index{k}        =index;
+            tmp.thr{k}          =thr;
+            tmp.par{k}          =par;
             tmp.cluster_class{k}=cluster_class;
             
             fprintf(['Feature detection for ' channelfile feature_types{k} '...\n']);
@@ -192,9 +184,7 @@ for ch=channels_to_process
             delete([handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_' feature_types{k} '.mat']);
         end
         
-        %% get relevant parameters
-        
-        %% concatinate all and order by time
+        %% concatenate all and order by time
         spikes=vertcat(tmp.spikes{:});
         index=vertcat(tmp.index{:});
         ccall=vertcat(tmp.features{:});
@@ -213,23 +203,18 @@ for ch=channels_to_process
         
         save([handles.WC_concatenation_folder 'dataspikes_ch' channelfile '.mat'],'spikes','index','thr','par','cluster_class')
         
-        %% feature selestion across the entire dataset!
+        %% feature selection across the entire dataset!
         [inspk,feature_names,inputs] = wc_feature_selection3(ccall,fn,feature_sds,features_per_subset,handles);
         
         cd(handles.WC_concatenation_folder) % for SPC to work, we have to change to the respective directory...
         wc_clustering_iterative_combined(inspk,feature_names,inputs,handles); % this one does the actual clustering. There is no way to do it in waveclus itself...
-        cd(current_path)
-        
-        
+        cd(current_path)        
     end
     
     %% need to document what to find where
     whattofindwhere{ch}=electrode_locations_to_process;
 end
+%% save WC concatenation information and settings...
 save([handles.WC_concatenation_folder 'concatenation_info'],'blocksamplesperchannel','wheretofindwhat','whattofindwhere','channels_to_process','sr')
-%% save WC settings...
-
 save([handles.WC_concatenation_folder 'settings'],'handles')
-%% identify next plx file name?
-%% save per plx file extension
 end
