@@ -104,14 +104,20 @@ for fol=1:numel(session_folders)
             plxxtesion=plx_file_table_to_use{plx_file_idx,idx.Plx_file_extension};
         end
         PLXEXTENSION=sprintf('-%02d',plxxtesion);
-        %% WC settings saved here as well, from ALL_preprocessing_logs history
+        %% WC settings saved here as well, from ALL_preprocessing_logs history -> LS 20220317: make sure the last plx version settings (before creation of this extension) are taken
         substruct=[PLXVERSION '_blocks_' num2str(block_num) '_sortcode_' PLXEXTENSION(2:end)];
-        if isfield(settings,[monkey(1:3) '_' date]) && isfield(settings.([monkey(1:3) '_' date]),'WC_per_sortcode') ...
-                && isfield(settings.([monkey(1:3) '_' date]).WC_per_sortcode, substruct)
-            spike_settings=settings.([monkey(1:3) '_' date]).WC_per_sortcode.(substruct);
-        else
-            spike_settings=struct;
+        spike_settings=struct;
+        if isfield(settings,[monkey(1:3) '_' date]) && isfield(settings.([monkey(1:3) '_' date]),'WC_per_sortcode')
+            plx_version_fieldnames=fieldnames(settings.([monkey(1:3) '_' date]).WC_per_sortcode);
+            current_block_plx_files=cellfun(@(x) any(strfind(x, [PLXVERSION '_blocks_' num2str(block_num) '_sortcode_'])),plx_version_fieldnames);
+            plx_version_fieldnames=plx_version_fieldnames(current_block_plx_files);
+            if ~isempty(plx_version_fieldnames)
+                plxextensions_as_num=str2num(cell2mat(cellfun(@(x) x(end-1:end),plx_version_fieldnames,'UniformOutput',false)));
+                plx_fn_to_take=plx_version_fieldnames{find(plxextensions_as_num<=str2double(PLXEXTENSION(2:end)),1,'last')};
+                spike_settings=settings.([monkey(1:3) '_' date]).WC_per_sortcode.(plx_fn_to_take);
+            end
         end
+
         TDT_trial_struct_input      = {'SORTNAME',SORTNAME,'DONTREAD',DONTREAD,'EXCLUSIVELYREAD',EXCLUSIVELYREAD,'CHANNELS',CHANNELS,...
             'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'PLXEXTENSION',PLXEXTENSION,'DISREGARDLFP',DISREGARDLFP,'DISREGARDSPIKES',DISREGARDSPIKES};
         TDT_trial_struct(handles,date,block,spike_settings,TDT_trial_struct_input{:})

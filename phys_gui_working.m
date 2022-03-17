@@ -44,9 +44,9 @@ set(handles.checkbox9,'Value',0);
 set(handles.checkbox91,'Value',0);
 set(handles.checkbox92,'Value',0);
 set(handles.checkbox10,'Value',0);
-set(handles.checkbox101,'Value',0);
-set(handles.checkbox102,'Value',0);
-set(handles.checkbox103,'Value',0);
+%set(handles.checkbox101,'Value',0);
+%set(handles.checkbox102,'Value',0);
+%set(handles.checkbox103,'Value',0);
 
 function Physio_GUI_V_Blumenkohl_Raspberry_CreateFcn(hObject, eventdata, handles)
 ha = axes('units','normalized', ...
