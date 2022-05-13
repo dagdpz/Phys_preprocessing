@@ -224,8 +224,8 @@ else
     
     % strange bug for counters in TDT not being set correctly in several trials in the beginning, 
     % probably due to random digital input (no idea where that came from): Bac_20210826
-    if any(Trials<1)
-        invalid=        Trials<1;
+    if numel(Trials)>1 && (any(Trials<1) || any( Session<100000|Session>800000) || any(Session~=Session(end)))
+        invalid=        Session<100000|Session>800000|Session~=Session(end); 
         Trials(invalid)       =[];
         Runs(invalid)         =[];
         Session(invalid)      =[];
