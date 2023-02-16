@@ -14,14 +14,15 @@ function DAG_update_plx_file_table(dates,handles)
 %           b) 'last'       : the highest number
 %           c) 'latest'     : the latest created version
 
-monkey=handles.monkey_phys;
+monkey_phys=handles.monkey_phys;
+monkey=handles.monkey;
 if nargin<2
     handles.preferred_SortType='Snippets';
     handles.preferred_Plx_file_extension='first';
 end
 dag_drive=DAG_get_server_IP;
 
-main_folder=[dag_drive 'Data' filesep 'Sortcodes' filesep monkey filesep];
+main_folder=[dag_drive 'Data' filesep 'Sortcodes' filesep monkey_phys filesep];
 main_folder_content=dir(main_folder);
 main_folder_content=main_folder_content([main_folder_content.isdir]);
 main_folder_content(1:2)=[];
@@ -29,15 +30,18 @@ subfolders={main_folder_content.name};
 if nargin>=2
     subfolders=subfolders(cellfun(@(x) ismember(str2double(x),dates),subfolders));
 end
+% 
+% DBpath=DAG_get_Dropbox_path;
+% DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
 
-DBpath=DAG_get_Dropbox_path;
-DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
+
+DBfolder=[dag_drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
 sheets_available={};
-if exist([DBfolder  monkey(1:3) '_plx_files.xlsx'],'file')
-    [~, sheets_available]=xlsfinfo([DBfolder  monkey(1:3) '_plx_files.xlsx']);
+if exist([DBfolder  monkey_phys(1:3) '_plx_files.xlsx'],'file')
+    [~, sheets_available]=xlsfinfo([DBfolder  monkey_phys(1:3) '_plx_files.xlsx']);
 end
 if ismember('to_use',sheets_available)
-    [~, ~, plx_file_table]=xlsread([DBfolder  monkey(1:3) '_plx_files.xlsx'],'to_use');
+    [~, ~, plx_file_table]=xlsread([DBfolder  monkey_phys(1:3) '_plx_files.xlsx'],'to_use');
 else
     plx_file_table={'Monkey','Date','Block','Sorttype','Plx_file_extension'};
 end
@@ -151,7 +155,7 @@ for s =1:numel(subfolders)
         
         %% add info to table
         n_row=n_row+1;
-        plx_file_table{n_row,idx.Monkey}=monkey(1:3);
+        plx_file_table{n_row,idx.Monkey}=monkey_phys(1:3);
         plx_file_table{n_row,idx.Date}=str2num(date);
         plx_file_table{n_row,idx.Block}=b;
         plx_file_table{n_row,idx.Sorttype}=Sorttype;
@@ -160,6 +164,6 @@ for s =1:numel(subfolders)
 end
 
 [complete_mastertable]=DAG_update_cell_table(old_table,plx_file_table,'Date');
-xlswrite([DBfolder filesep monkey(1:3) '_plx_files.xlsx'],complete_mastertable,'to_use');
+xlswrite([DBfolder filesep monkey_phys(1:3) '_plx_files.xlsx'],complete_mastertable,'to_use');
 end
 

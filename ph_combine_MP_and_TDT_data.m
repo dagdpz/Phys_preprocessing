@@ -34,9 +34,10 @@ SORTNAME                    = 'Plexsormanually';
 % 'from_BB': taking sortcodes from broadband PLX file
 % (needs to have extension '-01', if not existing it takes SORTNAME)
 
-
-DBpath=DAG_get_Dropbox_path;
-DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_phys_dpz' filesep];
+% 
+% DBpath=DAG_get_Dropbox_path;
+% DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_phys_dpz' filesep];
+DBfolder=[drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
 base_path                   = [drive 'Data' filesep]; % [drive ':\Data\'];
 TDT_prefolder_dir           = [base_path 'TDTtanks' filesep monkey '_phys' filesep];
 Combined_data_path          = strcat(base_path,[monkey '_phys_combined_monkeypsych_TDT' filesep]);

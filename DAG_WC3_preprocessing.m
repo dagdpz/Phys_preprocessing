@@ -4,10 +4,12 @@ handles=handles_in;
 
 cell_tracking_distance_limit=handles.WC.cell_tracking_distance_limit;
 monkey_phys=handles.monkey_phys;
+monkey=handles.monkey;
 current_path=pwd;
 drive=DAG_get_server_IP;
-DBpath=DAG_get_Dropbox_path;
-DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
+% DBpath=DAG_get_Dropbox_path;
+% DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
+DBfolder=[drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
 
 %% load electrode depths for selecting which electrodes are useful
 % AND for defining which blocks should be concatenated per channel

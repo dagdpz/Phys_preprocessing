@@ -8,8 +8,10 @@ function ph_simulate_history(monkey,dateback)
 % monkey='Cornelius';
 % dateback='10000000';
 
-dbpath=DAG_get_Dropbox_path;
+% dbpath=DAG_get_Dropbox_path;
 drive=DAG_get_server_IP;
+
+DBfolder=[drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
 base_folder=[drive 'Data' filesep 'All_phys_preprocessing_log' filesep];
 foldername=[base_folder monkey '_phys' filesep];
 if ~exist(foldername,'dir')
@@ -94,7 +96,7 @@ Sessions=dir([drive 'Data' filesep monkey '_phys_combined_monkeypsych_TDT']);
 Sessions={Sessions([Sessions.isdir]).name};
 
 %% load sortcode excel
-[~,~,sortcode_excel]=xlsread([dbpath 'DAG' filesep 'phys' filesep monkey '_phys_dpz' filesep monkey(1:3) '_plx_files.xlsx'],'in_use');
+[~,~,sortcode_excel]=xlsread([DBfolder monkey(1:3) '_plx_files.xlsx'],'in_use');
 for k=1:size(sortcode_excel,2)
     title=sortcode_excel{1,k};
     idx.(title)=k;

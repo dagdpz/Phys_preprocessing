@@ -2,8 +2,10 @@ function DAG_create_PLX(Session_as_num,monkey_phys,threshold,recordingnames,proc
 
 Session_as_str=num2str(Session_as_num);
 drive=DAG_get_server_IP;
-DBpath=DAG_get_Dropbox_path;
-DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
+% DBpath=DAG_get_Dropbox_path;
+% DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey_phys '_dpz' filesep];
+
+DBfolder=[drive 'Data' filesep 'Sorting_tables' filesep monkey_phys(1:end-5) filesep];
 
 %% load electrode depths for selecting which electrodes are useful
 % AND for defining which blocks should be concatinated per channel

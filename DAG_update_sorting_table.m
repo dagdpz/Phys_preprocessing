@@ -22,8 +22,9 @@ if nargin>=2
 end
 
 
-DBpath=DAG_get_Dropbox_path;
-DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
+% DBpath=DAG_get_Dropbox_path;
+% DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
+DBfolder=[dag_drive 'Data' filesep 'Sorting_tables' filesep monkey(1:end-5) filesep];
 [~, sheets_available]=xlsfinfo([DBfolder  monkey(1:3) '_sorted_neurons.xlsx']);
 if ismember('final_sorting',sheets_available)
     [~, ~, sorting_table]=xlsread([DBfolder  monkey(1:3) '_sorted_neurons.xlsx'],'final_sorting');

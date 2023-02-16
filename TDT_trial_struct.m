@@ -50,16 +50,19 @@ function TDT_trial_struct(handles,date_str,block,spike_settings,varargin)
 % Danial Arabali & Lukas Schneider
 
 drive=handles.drive;
-monkey=handles.monkey_phys;
+monkey_phys=handles.monkey_phys;
+monkey=handles.monkey;
 data_path                   = [drive 'Data' filesep]; 
 
 %% crate folders
-plxfilefolder                   = [data_path 'Sortcodes' filesep monkey filesep date_str filesep];
-TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey filesep date_str filesep block];
-matfromTDT_folder               = strcat([data_path monkey '_mat_from_TDT']);
+plxfilefolder                   = [data_path 'Sortcodes' filesep monkey_phys filesep date_str filesep];
+TDTblockfolder                  = [data_path 'TDTtanks' filesep monkey_phys filesep date_str filesep block];
+matfromTDT_folder               = strcat([data_path monkey_phys '_mat_from_TDT']);
 temp_raw_folder                 = strcat([matfromTDT_folder filesep date_str]);
-DBpath                          = DAG_get_Dropbox_path;
-DBfolder                        = [DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
+% DBpath                          = DAG_get_Dropbox_path;
+% DBfolder                        = [DBpath filesep 'DAG' filesep 'phys' filesep monkey '_dpz' filesep];
+DBfolder=[drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
+
 if exist(matfromTDT_folder,'dir')~=7
     mkdir(matfromTDT_folder)
 end
@@ -276,8 +279,8 @@ end
 %% load excel lag table if applicable
 lag_table_string={'Session','Block','lag_seconds'};
 lag_table_num=zeros(size(lag_table_string));
-if exist([DBfolder filesep monkey '_LFP_BROA_comp.xls'],'file')
-    [lag_table_num,lag_table_string]=xlsread([DBfolder filesep monkey '_LFP_BROA_comp.xls']);
+if exist([DBfolder filesep monkey_phys '_LFP_BROA_comp.xls'],'file')
+    [lag_table_num,lag_table_string]=xlsread([DBfolder filesep monkey_phys '_LFP_BROA_comp.xls']);
 end
 
 %% use Broadband for LFP if available
@@ -437,7 +440,7 @@ for r=1:numel(unique_runs)          % looping through runs
     preprocessing_settings_temp=preprocessing_settings;
     
     %% load already existing file (if it exists) and merge structures
-    filename=[temp_raw_folder, filesep, monkey(1:3), 'TDT', date_str(1:4), '-', date_str(5:6), '-', date_str(7:8), '_', sprintf('%02d',run) ];
+    filename=[temp_raw_folder, filesep, monkey_phys(1:3), 'TDT', date_str(1:4), '-', date_str(5:6), '-', date_str(7:8), '_', sprintf('%02d',run) ];
     Validtrials=find(~arrayfun(@(x) isempty(x.trial),TDT_trial_temp));
     if exist([filename '.mat'],'file')
         warning ('off','all');

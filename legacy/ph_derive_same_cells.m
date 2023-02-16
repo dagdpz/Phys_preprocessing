@@ -5,10 +5,14 @@ function ph_derive_same_cells(monkey)
 % This function should not be necessary any more, it was used to
 % automatically create the first Same_cells files.
 
-dbpath=DAG_get_Dropbox_path;
-main_folder=[dbpath filesep 'DAG' filesep 'phys' filesep];
-xcel_table_file=[main_folder monkey '_phys_dpz' filesep monkey(1:3) '_sorted_neurons.xlsx'];
-m_file_name=[main_folder monkey '_phys_dpz' filesep 'Same_cells_' monkey(1:3) '.m'];
+% dbpath=DAG_get_Dropbox_path;
+% main_folder=[dbpath filesep 'DAG' filesep 'phys' filesep];
+
+dag_drive=DAG_get_server_IP;
+DBfolder=[dag_drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
+
+xcel_table_file=[DBfolder monkey(1:3) '_sorted_neurons.xlsx'];
+m_file_name=[DBfolder 'Same_cells_' monkey(1:3) '.m'];
 xcel_sheet='final_sorting';
 [~,~,xcel_table]=xlsread(xcel_table_file,xcel_sheet);
 
