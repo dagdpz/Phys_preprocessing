@@ -35,12 +35,14 @@ for ii = 1:length(channels)
     
     fileN=[handles.WC_concatenation_folder 'dataspikes_ch' sprintf('%03d',ch) '_' num2str(handles.wheretofindwhat{handles.block}{ch})];
     
-    switch handles.threshold
-        case 'pos',     filenames={[fileN '_SU_pos.mat' ],[fileN '_MU_pos.mat' ]};
-        case 'neg',     filenames={[fileN '_SU_neg.mat' ],[fileN '_MU_neg.mat' ]};
-        case 'both',    filenames={[fileN '_SU_neg.mat' ],[fileN '_MU_neg.mat' ],[fileN '_SU_pos.mat' ],[fileN '_MU_pos.mat' ]};
-    end
+%     switch handles.threshold
+%         case 'pos',     filenames={[fileN '_SU_pos.mat' ],[fileN '_MU_pos.mat' ]};
+%         case 'neg',     filenames={[fileN '_SU_neg.mat' ],[fileN '_MU_neg.mat' ]};
+%         case 'both',    filenames={[fileN '_SU_neg.mat' ],[fileN '_MU_neg.mat' ],[fileN '_SU_pos.mat' ],[fileN '_MU_pos.mat' ]};
+%     end
     
+filenames={[fileN '.mat']};
+
     spkt=SPK.spiketimes;
     sortid=SPK.sortID;
     channelid=SPK.channelID;
