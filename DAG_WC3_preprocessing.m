@@ -181,8 +181,14 @@ for ch=channels_to_process
             tmp.par{k}          =par;
             tmp.cluster_class{k}=cluster_class;
             
-            fprintf(['Feature detection for ' channelfile feature_types{k} '...\n']);
-            [tmp.features{k},tmp.feature_names,tmp.feature_sds{k}] = wc_get_features(spikes,index,handles);
+            if numel(cluster_class)<1
+                fprintf(['No spikes in ' channelfile feature_types{k} ', skipping \n']);
+                tmp.features{k}=[];
+                tmp.feature_sds{k}=[];
+            else %% IF there are any spikes !(??)
+                fprintf(['Feature detection for ' channelfile feature_types{k} '...\n']);
+                [tmp.features{k},tmp.feature_names,tmp.feature_sds{k}] = wc_get_features(spikes,index,handles);
+            end
             delete([handles.WC_concatenation_folder 'dataspikes_ch' channelfile '_' feature_types{k} '.mat']);
         end
         
