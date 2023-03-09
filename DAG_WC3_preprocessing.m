@@ -88,7 +88,7 @@ if ~exist(handles.WC_concatenation_folder,'dir')
     mkdir(handles.sortcodes_folder,'WC');
 end
 
-%% if one block is skipped in the electorde depth file, depths_in_this_session is not the same as depths_temp
+%% if one block is skipped in the electrode depth file, depths_in_this_session is not the same as depths_temp
 depths_temp=z(cell2mat(Session)==Session_as_num);
 channels_temp=channels(cell2mat(Session)==Session_as_num);
 for b=1:numel(blocks_in_this_session)
@@ -99,6 +99,7 @@ end
 %% here we go through channels to concatenate data from same channel in same depth!
 for ch=channels_to_process
     handles.current_channel = ch;
+    handles.channel = ch;
     previous_blocks_depth=0;
     electrode_locations_to_process=cell(1);
     same_depth_counter=0;
@@ -215,6 +216,9 @@ for ch=channels_to_process
         [inspk,feature_names,inputs] = wc_feature_selection3(ccall,fn,feature_sds,features_per_subset,handles);
         
         cd(handles.WC_concatenation_folder) % for SPC to work, we have to change to the respective directory...
+        
+        handles.blocksamplesperchannel=blocksamplesperchannel;
+        handles.whattofindwhere{ch}=electrode_locations_to_process;
         wc_clustering_iterative_combined(inspk,feature_names,inputs,handles); % this one does the actual clustering. There is no way to do it in waveclus itself...
         cd(current_path)        
     end
