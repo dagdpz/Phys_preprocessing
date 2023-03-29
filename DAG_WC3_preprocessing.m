@@ -182,8 +182,10 @@ for ch=channels_to_process
             tmp.par{k}          =par;
             tmp.cluster_class{k}=cluster_class;
             
-            if numel(cluster_class)<1
-                fprintf(['No spikes in ' channelfile feature_types{k} ', skipping \n']);
+            if numel(cluster_class)<3
+                fprintf(['Less than 3 spikes in ' channelfile feature_types{k} ', skipping \n']);
+                tmp.spikes{k}=[];
+                tmp.index{k}=[];
                 tmp.features{k}=[];
                 tmp.feature_sds{k}=[];
             else %% IF there are any spikes !(??)
