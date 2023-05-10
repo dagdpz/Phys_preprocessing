@@ -142,7 +142,6 @@ for s =1:numel(subfolders)
             if ~isnan(sortcode) % there is a cell
                 sorting_table{n_row,idx.Unit}=unit_names{sortcode};
                 sorting_table{n_row,idx.N_spk}=sum(arrayfun(@(x) numel(x.TDT_eNeu_t{channel,sortcode}),trial));
-                
                 cellrepeated=arrayfun(@(x) any(x.Session==session) && any(x.channel==channel) && any(x.blocks==block & x.sortcodes==sortcode),Same_cells);
                 if ~any(cellrepeated) %% unit is unique
                     unit_per_session_counter=unit_per_session_counter+1;
@@ -156,7 +155,9 @@ for s =1:numel(subfolders)
                         n_Times_same_unit_counter=1;
                     else %% this cell was already processed
                         if isempty(Same_cells(cellrepeated).Neuron_ID)
-                            a=1; % this is a rather common type of bug (caused by incorrect same_cells entries), that should be displayed, just dont remember the exact origin.
+                            disp(sprintf(['Error for Session %d, block %d, channel %d, unit %d: \n' ...
+                        'According to same_cells file, this unit appeared in a previous block, but was not found in the combined files \n'...
+                        'Did you forget to update combined files after resorting? \n'],session,block,channel,sortcode))
                         else
                             n_Times_same_unit_counter=sum(ismember(sorting_table(1:end-1,idx.Neuron_ID),Same_cells(cellrepeated).Neuron_ID))+1;
                         end
