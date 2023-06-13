@@ -386,6 +386,9 @@ for r=1:numel(unique_runs)          % looping through runs
         if any(snip_index)
             trial_snippet_indexes=data.snips.eNeu.ts>=trial_time(1) & data.snips.eNeu.ts<=trial_time(2); %logical index for snippets belonging to current trial
             unique_channels=unique(data.snips.eNeu.chan);                                                 %this could go to the beginning..?
+            % this pre-allocaiton here is for the case of no units in this block
+            TDT_DATA.Trial(tr).eNeu_t={};
+            TDT_DATA.Trial(tr).eNeu_w={};
             for chan=unique_channels'
                 channel_idx=data.snips.eNeu.chan==chan;
                 unique_sortcodes=unique([data.snips.eNeu.sortcode]);
