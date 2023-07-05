@@ -120,6 +120,18 @@ for s =1:numel(subfolders)
             [ch,un]=ind2sub(size(trial(t).TDT_eNeu_t),nonempties);
             channel_units=unique([channel_units; ch(:) un(:)],'rows');
         end
+        % retrieving info from same cells - and allowing "empty" units if
+        % there is an entry in Same_cells for this session, block, channel,
+        % and sortcode
+        Session_sc=Same_cells([Same_cells.Session]==session);
+        b_sc=arrayfun(@(x) any(x.blocks==block),Session_sc);
+        cu_sc=[0 0];
+        cu_sc(1,:)=[];
+        for oo=find(b_sc)
+            cu_sc=vertcat(cu_sc,[repmat(Session_sc(oo).channel,numel(Session_sc(oo).sortcodes),1),[Session_sc(oo).sortcodes]']);
+        end
+        channel_units=unique([channel_units; cu_sc],'rows');
+        
         ch_no_units=ch_considered(~ismember(ch_considered,channel_units(:,1)));
         ch_no_units=[ch_no_units NaN(size(ch_no_units))];
         channel_units=unique([channel_units; ch_no_units],'rows');
