@@ -153,7 +153,11 @@ for s =1:numel(subfolders)
             sorting_table{n_row,idx.z}=z;
             if ~isnan(sortcode) % there is a cell
                 sorting_table{n_row,idx.Unit}=unit_names{sortcode};
+                if sortcode>size(trial(1).TDT_eNeu_t,2) %%
+                 sorting_table{n_row,idx.N_spk}=0;
+                else
                 sorting_table{n_row,idx.N_spk}=sum(arrayfun(@(x) numel(x.TDT_eNeu_t{channel,sortcode}),trial));
+                end
                 cellrepeated=arrayfun(@(x) any(x.Session==session) && any(x.channel==channel) && any(x.blocks==block & x.sortcodes==sortcode),Same_cells);
                 if ~any(cellrepeated) %% unit is unique
                     unit_per_session_counter=unit_per_session_counter+1;
