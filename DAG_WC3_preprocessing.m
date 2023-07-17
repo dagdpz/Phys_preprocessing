@@ -16,6 +16,7 @@ DBfolder=[drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
 run([DBfolder 'Electrode_depths_' monkey_phys(1:3)]);
 handles.channels_to_process=unique([channels{cell2mat(Session)==Session_as_num}]);
 channels_to_process=handles.channels_to_process;
+blocks_in_this_session=[block{cell2mat(Session)==Session_as_num}];
 if isempty(handles.channels_to_process)
     disp(['No matching Session' num2str(Session_as_num) 'in Electrode_depths_' monkey_phys(1:3) '.mat']);
     return;
@@ -42,6 +43,9 @@ for ii =1:length(recordingnames)
     
     block_char      = recordingname(strfind(recordingname,'-')+1:end);
     block_num       = str2double(block_char);
+    if ~ismember(block_num,blocks_in_this_session)
+        continue;
+    end
     disp(['Processing: ' monkey_phys ' ' num2str(Session_as_num) ' ' recordingname]);
     if ~exist(handles.WC_block_folder,'dir')
         mkdir(handles.sortcodes_folder,folder);
@@ -84,7 +88,6 @@ for ii =1:length(recordingnames)
     end
 end
 
-blocks_in_this_session=[block{cell2mat(Session)==Session_as_num}];
 
 if ~exist(handles.WC_concatenation_folder,'dir')
     mkdir(handles.sortcodes_folder,'WC');
