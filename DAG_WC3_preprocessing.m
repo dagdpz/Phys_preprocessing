@@ -59,7 +59,7 @@ for ii =1:length(recordingnames)
     
     %% apply filters
     DAG_SpikefilterChan(handles);
-    state_information = TDTbin2mat_working([handles.tank_folder recordingname] , 'EXCLUSIVELYREAD',{'SVal'},'SORTNAME', 'Plexsormanually');
+    state_information = TDTbin2mat_working([handles.tank_folder recordingname] , 'EXCLUSIVELYREAD',{'SVal','utcStopTime','utcStartTime'},'SORTNAME', 'Plexsormanually');
     
     %% get task on and offsets (to potentially cut out ITI later on) : on and offs are in seconds!
     if handles.WC.remove_ini && ~isempty(state_information.epocs) %% && isfield(state_information,'epocs') 
@@ -77,8 +77,10 @@ for ii =1:length(recordingnames)
         offs(t_critical)=[];
         ons(t_critical)=[];
         handles.task_times_per_block{block_num}=[ons offs]; %% here i expect an error at some point - dimension mismatch
-    else %% if there is no task information, take full block
+    elseif ~isnan(state_information.info.utcStopTime) &&  ~isnan(state_information.info.utcStartTime) %% if there is no task information, take full block
         handles.task_times_per_block{block_num}=[0 (datenum(state_information.info.utcStopTime,'HH:MM:SS')-datenum(state_information.info.utcStartTime,'HH:MM:SS'))*24*3600]; %% here i expect an error at some point - dimension mismatch
+    else
+        handles.task_times_per_block{block_num}=[0 inf];
     end
 end
 
