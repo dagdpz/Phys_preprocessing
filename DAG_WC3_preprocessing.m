@@ -67,22 +67,22 @@ for ii =1:length(recordingnames)
     
     %% get task on and offsets (to potentially cut out ITI later on) : on and offs are in seconds!
     if handles.WC.remove_ini && ~isempty(state_information.epocs) %% && isfield(state_information,'epocs') 
-        offs_temp=state_information.epocs.SVal.onset(state_information.epocs.SVal.data>18);
+        offs_temp=state_information.epocs.SVal.onset(ismember(state_information.epocs.SVal.data,[19,20,21,50])); % was all states > 18 before, which might cause problems in the future
         ons=state_information.epocs.SVal.onset(state_information.epocs.SVal.data<2);
         offs=NaN(size(ons));
         t_critical=[];
         for t=1:numel(ons)
             if any(offs_temp>ons(t))
-                offs(t)=offs_temp(find(offs_temp>ons(t),1,'first')) + 0.06; % adding 60 ms so
+                offs(t)=offs_temp(find(offs_temp>ons(t),1,'first')) + 0.06; % adding 60 ms so PSTHs are meaningful towards the end of a trial
             else
                 t_critical=[t_critical t];
             end
         end
         offs(t_critical)=[];
         ons(t_critical)=[];
-        handles.task_times_per_block{block_num}=[ons offs]; %% here i expect an error at some point - dimension mismatch
-    elseif ~isnan(state_information.info.utcStopTime) &&  ~isnan(state_information.info.utcStartTime) %% if there is no task information, take full block
-        handles.task_times_per_block{block_num}=[0 (datenum(state_information.info.utcStopTime,'HH:MM:SS')-datenum(state_information.info.utcStartTime,'HH:MM:SS'))*24*3600]; %% here i expect an error at some point - dimension mismatch
+        handles.task_times_per_block{block_num}=[ons offs]; 
+    elseif sum(~isnan(state_information.info.utcStopTime))==8 &&  sum(~isnan(state_information.info.utcStartTime))==8 %% if there is no task information, take full block
+        handles.task_times_per_block{block_num}=[0 (datenum(state_information.info.utcStopTime,'HH:MM:SS')-datenum(state_information.info.utcStartTime,'HH:MM:SS'))*24*3600]; 
     else
         handles.task_times_per_block{block_num}=[0 inf];
     end
