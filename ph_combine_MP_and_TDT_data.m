@@ -195,7 +195,13 @@ for idx_c       = 1:numel(folders_to_combine)
                 end
                 current_file_path=[Combined_data_path  individual_day_folder_MP(end-7:end) filesep current_file(1:3) 'combined' current_file(4:end-4), '_block_', sprintf('%02d',block), '.mat'];
                 disp(['saving ' current_file_path])
-                save(current_file_path,'task','trial','preprocessing_settings','SETTINGS','First_trial_INI')
+                S = whos('task','trial','preprocessing_settings','SETTINGS','First_trial_INI'); % figure out variable bytes to put them into either -v4 or -v7.3 mat file
+                var_bytes = [S.bytes];
+                if any(var_bytes >= 2^31) % variables with >2^31 bytes won't fit into default -v4 mat-file version, use -v7.3
+                    save(current_file_path,'task','trial','preprocessing_settings','SETTINGS','First_trial_INI', '-v7.3')
+                else
+                    save(current_file_path,'task','trial','preprocessing_settings','SETTINGS','First_trial_INI')
+                end
             end
         end
     end
