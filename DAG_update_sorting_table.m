@@ -77,7 +77,10 @@ for c=1:numel(Same_cells)
     z=Electrode_depths(d).z(Electrode_depths(d).channels==Same_cells(c).channel);
     for s2=2:numel(Same_cells(c).blocks)
         d=[Electrode_depths.Session]==Same_cells(c).Session & [Electrode_depths.block]==Same_cells(c).blocks(s2);
-        if z~=Electrode_depths(d).z(Electrode_depths(d).channels==Same_cells(c).channel)
+        if abs(z - Electrode_depths(d).z(Electrode_depths(d).channels==Same_cells(c).channel)) > 50
+            % in BB analysis electrode depths spaced shorter than 50
+            % microns are considered the same depth, so it shouldn't 
+            % complain here for shorter distances
             disp(['Problem in ' num2str(Same_cells(c).Session) ', channel ' num2str(Same_cells(c).channel), ' block ' num2str(Same_cells(c).blocks(s2)) ', same cell in different depths']);
         end
     end
