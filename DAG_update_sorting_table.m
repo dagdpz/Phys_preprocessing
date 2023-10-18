@@ -174,9 +174,9 @@ for s =1:numel(subfolders)
                         n_Times_same_unit_counter=1;
                     else %% this cell was already processed
                         if isempty(Same_cells(cellrepeated).Neuron_ID)
-                            disp(sprintf(['Error for Session %d, block %d, channel %d, unit %d: \n' ...
+                            fprintf(['Error for Session %d, block %d, channel %d, unit %d: \n' ...
                         'According to same_cells file, this unit appeared in a previous block, but was not found in the combined files \n'...
-                        'Did you forget to update combined files after resorting? \n'],session,block,channel,sortcode))
+                        'Did you forget to update combined files after resorting? \n'],session,block,channel,sortcode)
                         else
                             n_Times_same_unit_counter=sum(ismember(sorting_table(1:end-1,idx.Neuron_ID),Same_cells(cellrepeated).Neuron_ID))+1;
                         end
