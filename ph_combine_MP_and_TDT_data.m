@@ -38,6 +38,12 @@ SORTNAME                    = 'Plexsormanually';
 % DBpath=DAG_get_Dropbox_path;
 % DBfolder=[DBpath filesep 'DAG' filesep 'phys' filesep monkey '_phys_dpz' filesep];
 DBfolder=[drive 'Data' filesep 'Sorting_tables' filesep monkey filesep];
+
+% new part to skip blocks not metnioned in electrode_depths
+run([DBfolder filesep 'Electrode_depths_' monkey(1:3) '.m']);
+ses_idx=ismember([Session{:}],dates);
+valid_blocks=[block{ses_idx}];
+
 base_path                   = [drive 'Data' filesep]; % [drive ':\Data\'];
 TDT_prefolder_dir           = [base_path 'TDTtanks' filesep monkey '_phys' filesep];
 Combined_data_path          = strcat(base_path,[monkey '_phys_combined_monkeypsych_TDT' filesep]);
@@ -88,6 +94,10 @@ for fol=1:numel(session_folders)
         count=count+1;
         block = blocks_string{i};
         block_num=str2num(block(findstr(block,'-')+1:end));
+        if ~any(valid_blocks==block_num)
+            continue;
+        end
+        
         
         plx_file_idx=[false, [plx_file_table_to_use{2:end,idx.Date}]==date_num] & [false, [plx_file_table_to_use{2:end,idx.Block}]==block_num];
         if sum(plx_file_idx)>1
