@@ -25,6 +25,7 @@ for f=1:numel(filenames)
         end
         if handles.TODO.WCFromBB
             settings.(s_fname).WC=handles.WC;
+            settings.(s_fname).WC_filename=filenames{f};
         end
         if  handles.TODO.PLXFromWCFromBB 
         %% if there was an error creating WC across several sessions, settings.(s_fname).WC can be not defined because there is no executed log file for this session with handles.TODO.WCFromBB
@@ -33,10 +34,12 @@ for f=1:numel(filenames)
             for b=1:numel(versions_per_block)
                 settings.(s_fname).plx_version_per_block(b)=versions_per_block(b);
                 settings.(s_fname).WC_per_sortcode.(['from_BB_blocks_' num2str(b) '_sortcode_' sprintf('%02d',versions_per_block(b)) ])=settings.(s_fname).WC; 
+                settings.(s_fname).plx_filename=filenames{f};
             end
         end
         if  handles.TODO.CombineTDTandMP
             settings.(s_fname).LFP=handles.LFP;
+            settings.(s_fname).LFP.filename=filenames{f};
         end
     end
 end
