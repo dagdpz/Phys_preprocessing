@@ -52,7 +52,12 @@ for c=1:numel(sorting_table)
     idx.(column_name)=DAG_find_column_index(sorting_table,column_name);
 end
 old_table(1,:)=sorting_table;
-
+if ismember('automatic_sorting',sheets_available)
+    [~, ~, auto_table]=xlsread([DBfolder  monkey(1:3) '_sorted_neurons.xlsx'],'automatic_sorting');
+    old_table_rows=size(auto_table,1);
+else
+    old_table_rows=0;
+end
 %% load same cells
 clear Session channel blocks sortcodes
 run([DBfolder  filesep 'Same_cells_' monkey(1:3)]);
@@ -79,7 +84,7 @@ for c=1:numel(Same_cells)
         d=[Electrode_depths.Session]==Same_cells(c).Session & [Electrode_depths.block]==Same_cells(c).blocks(s2);
         if abs(z - Electrode_depths(d).z(Electrode_depths(d).channels==Same_cells(c).channel)) > 50
             % in BB analysis electrode depths spaced shorter than 50
-            % microns are considered the same depth, so it shouldn't 
+            % microns are considered the same depth, so it shouldn't
             % complain here for shorter distances
             disp(['Problem in ' num2str(Same_cells(c).Session) ', channel ' num2str(Same_cells(c).channel), ' block ' num2str(Same_cells(c).blocks(s2)) ', same cell in different depths']);
         end
@@ -90,7 +95,7 @@ n_row=1;
 new_sessions_counter=0;
 for s =1:numel(subfolders)
     date=subfolders{s};
-    session=str2double(date);
+    session=str2double(date)
     if ~ismember(session,unique_old_dates)
         new_sessions_counter=new_sessions_counter+1;
     end
@@ -114,7 +119,10 @@ for s =1:numel(subfolders)
         end
         ch_considered=Electrode_depths(d).channels';
         
-        %% retrieving channels and units recorded in this run
+        %% retrieving channels and units recorded in this run        
+        whatsthis=arrayfun(@(x) size(x.TDT_eNeu_t),trial,'uniformoutput',false);
+        eNeusizebytrial=cat(1,whatsthis{:});
+        
         channel_units=[0 0];
         channel_units(1,:)=[];
         trial=trial(~cellfun(@isempty,{trial.TDT_states})); %% some trials are empty...
@@ -123,6 +131,7 @@ for s =1:numel(subfolders)
             [ch,un]=ind2sub(size(trial(t).TDT_eNeu_t),nonempties);
             channel_units=unique([channel_units; ch(:) un(:)],'rows');
         end
+        
         % retrieving info from same cells - and allowing "empty" units if
         % there is an entry in Same_cells for this session, block, channel,
         % and sortcode
@@ -156,10 +165,11 @@ for s =1:numel(subfolders)
             sorting_table{n_row,idx.z}=z;
             if ~isnan(sortcode) % there is a cell
                 sorting_table{n_row,idx.Unit}=unit_names{sortcode};
-                if sortcode>size(trial(1).TDT_eNeu_t,2) %%
-                 sorting_table{n_row,idx.N_spk}=0;
+                trials_with_unit=all([eNeusizebytrial(:,1)==channel eNeusizebytrial(:,2)==sortcode],2);
+                if ~any(trials_with_unit)
+                    sorting_table{n_row,idx.N_spk}=0;
                 else
-                sorting_table{n_row,idx.N_spk}=sum(arrayfun(@(x) numel(x.TDT_eNeu_t{channel,sortcode}),trial));
+                    sorting_table{n_row,idx.N_spk}=sum(arrayfun(@(x) numel(x.TDT_eNeu_t{channel,sortcode}),trial(trials_with_unit)));
                 end
                 cellrepeated=arrayfun(@(x) any(x.Session==session) && any(x.channel==channel) && any(x.blocks==block & x.sortcodes==sortcode),Same_cells);
                 if ~any(cellrepeated) %% unit is unique
@@ -175,8 +185,8 @@ for s =1:numel(subfolders)
                     else %% this cell was already processed
                         if isempty(Same_cells(cellrepeated).Neuron_ID)
                             fprintf(['Error for Session %d, block %d, channel %d, unit %d: \n' ...
-                        'According to same_cells file, this unit appeared in a previous block, but was not found in the combined files \n'...
-                        'Did you forget to update combined files after resorting? \n'],session,block,channel,sortcode)
+                                'According to same_cells file, this unit appeared in a previous block, but was not found in the combined files \n'...
+                                'Did you forget to update combined files after resorting? \n'],session,block,channel,sortcode)
                         else
                             n_Times_same_unit_counter=sum(ismember(sorting_table(1:end-1,idx.Neuron_ID),Same_cells(cellrepeated).Neuron_ID))+1;
                         end
@@ -233,10 +243,32 @@ if size(old_table,1)>1
             sorting_table(r,:)=new_line(2,:);
         end
     end
+    %% remove old table entries for the sessions we are updating
     old_table([false, ismember([old_table{2:end,idx.Date}],[sorting_table{2:end,idx.Date}])],:)=[];
 end
-
-[complete_mastertable]=DAG_update_cell_table(sorting_table,old_table,'Date');
-xlswrite([DBfolder filesep monkey(1:3) '_sorted_neurons.xlsx'],complete_mastertable,'automatic_sorting');
+%% fill in rows corresponding to new sessions
+sessions=unique([sorting_table{2:end,idx.Date}]);
+complete_table=old_table;
+for s=1:numel(sessions)
+    session=sessions(s);
+    rows_new=[false sorting_table{2:end,idx.Date}]==session;
+    old_sessions=[0 complete_table{2:end,idx.Date}];
+    split_after_this=find(old_sessions<session,1,'last');
+    split_until_here=find(old_sessions>session,1,'first');
+    if any(split_until_here)
+    complete_table=[complete_table(1:split_after_this,:);...
+        sorting_table(rows_new,:);...
+        complete_table(split_until_here:end,:)];
+    else
+    complete_table=[complete_table(1:split_after_this,:);...
+        sorting_table(rows_new,:)];
+    end
+end
+% %% add empty rows at the end to overwrite excess rows in case of shorting a session
+% if old_table_rows>size(complete_table,1)
+%     complete_table=[complete_table; cell(old_table_rows-size(complete_table,1),size(complete_table,2))];
+% end
+%[complete_mastertable]=DAG_update_cell_table(sorting_table,old_table,'Date');
+xlswrite([DBfolder filesep monkey(1:3) '_sorted_neurons.xlsx'],complete_table,'automatic_sorting');
 end
 
