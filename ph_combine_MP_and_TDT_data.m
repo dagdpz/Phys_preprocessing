@@ -19,6 +19,7 @@ drive=handles.drive;
 monkey=handles.monkey;
 monkey_phys=handles.monkey_phys;
 DISREGARDLFP                = handles.TODO.DisregardLFP;
+DISREGARDMUA                = handles.TODO.DisregardMUA;
 DISREGARDSPIKES             = handles.TODO.DisregardSpikes;
 %varargin={'PLXVERSION',handles.TDT.PLXVERSION,'DISREGARDLFP',handles.TODO.DisregardLFP,'DISREGARDSPIKES',Thandles.ODO.DisregardSpikes};
 
@@ -60,7 +61,7 @@ for c=1:size(plx_file_table_to_use,2)
     idx.(column_name)=DAG_find_column_index(plx_file_table_to_use,column_name);
 end
 settings=ph_get_preprocessing_settings(monkey_phys,'executed');
-if DISREGARDLFP
+if DISREGARDLFP && DISREGARDMUA
     DONTREAD=[DONTREAD, {'BROA','Broa','LFPx'}];
     DONTREAD=unique(DONTREAD);
 end
@@ -89,16 +90,16 @@ for fol=1:numel(session_folders)
     else
         blocks_string={block_folders.name}';
     end
-    
-    for i=1:numel(blocks_string);
+
+    for i=1:numel(blocks_string)
         count=count+1;
         block = blocks_string{i};
         block_num=str2num(block(findstr(block,'-')+1:end));
         if ~any(valid_blocks==block_num)
             continue;
         end
-        
-        
+
+
         plx_file_idx=[false, [plx_file_table_to_use{2:end,idx.Date}]==date_num] & [false, [plx_file_table_to_use{2:end,idx.Block}]==block_num];
         if sum(plx_file_idx)>1
             disp('More than one sortcode entry, skipping')
@@ -132,7 +133,7 @@ for fol=1:numel(session_folders)
         TDT_trial_struct_input      = {'SORTNAME',SORTNAME,'DONTREAD',DONTREAD,'EXCLUSIVELYREAD',EXCLUSIVELYREAD,'CHANNELS',CHANNELS,...
             'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'PLXVERSION',PLXVERSION,'PLXEXTENSION',PLXEXTENSION,'DISREGARDLFP',DISREGARDLFP,'DISREGARDSPIKES',DISREGARDSPIKES};
         TDT_trial_struct(handles,date,block,spike_settings,TDT_trial_struct_input{:})
-        
+
         %% storing used sortcode information in plx table
         tmp_plx_file_table{count,idx.Monkey}=monkey(1:3);
         tmp_plx_file_table{count,idx.Date}=date_num;
@@ -147,7 +148,7 @@ for fol=1:numel(session_folders)
     end
     [plx_file_table_in_use]=DAG_update_cell_table(plx_file_table_in_use,tmp_plx_file_table,'Date');
     xlswrite([TDT_data_path date filesep monkey(1:3) '_plx_files.xlsx'],plx_file_table_to_use,'list_of_used_plx_files');
-    
+
     xlswrite([DBfolder  monkey(1:3) '_plx_files.xlsx'],plx_file_table_in_use,'in_use');
 end
 

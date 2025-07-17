@@ -77,6 +77,7 @@ PLXVERSION='';
 PLXEXTENSION='-01';
 DISREGARDLFP=0;
 DISREGARDSPIKES=0;
+DISREGARDMUA=0; % to be added to phys_gui and phys_gui_execute
 for i = 1:2:length(varargin)
     eval([upper(varargin{i}) '=varargin{i+1};']);
     eval(['preprocessing_settings.(upper(varargin{i}))' '=varargin{i+1};']);
@@ -288,13 +289,18 @@ if any(BB_index)
     BB=stream_fieldnames{BB_index};
     stream_fieldnames{BB_index}='LFPx';
     stream_fieldnames(LFP_index)=[];
-    varargin_per_channel={'SORTNAME',SORTNAME,'DISREGARDLFP',DISREGARDLFP,'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'EXCLUSIVELYREAD',{BB}};
+    %stream_fieldnames(end+1)='MUAx';
+    %varargin_per_channel={'SORTNAME',SORTNAME,'DISREGARDLFP',DISREGARDLFP,'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'EXCLUSIVELYREAD',{BB}};
+    varargin_per_channel={'SORTNAME',SORTNAME,'STREAMSWITHLIMITEDCHANNELS',STREAMSWITHLIMITEDCHANNELS,'EXCLUSIVELYREAD',{BB}};
     
     %% create LFP based on filtering broadband
     samplingrate=datainfo.stores.(BB).fs;           % Hz ?
-    SR_factor=round(samplingrate/1010);             % LFP sampling rate should be exactly 1/24th of boradband
-    data.streams.LFPx.fs=samplingrate/SR_factor;
+    SR_factor_LFP=round(samplingrate/1010);             % LFP sampling rate should be exactly 1/24th of boradband
     
+    SR_factor_MUA=round(samplingrate/505);             % LFP sampling rate should be exactly 1/48th of boradband
+    data.streams.LFPx.fs=samplingrate/SR_factor_LFP;
+    data.streams.MUAx.fs=samplingrate/SR_factor_MUA;
+
     %% get lag for current block
     lag=ph_readout_broadband_lag(lag_table_num,lag_table_string,str2double(date_str),Block_N);
     lag_in_samples=round(lag*samplingrate);
@@ -310,7 +316,15 @@ if any(BB_index)
             chandata=[zeros(1,abs(lag_in_samples)) chandata];
         end
         %% filter BB to LFP
-        data.streams.LFPx.data(channel,:)=filter_function(chandata,samplingrate,SR_factor,size(data.streams.LFPx.data,2),preprocessing_settings);
+        if ~DISREGARDLFP
+        data.streams.LFPx.data(channel,:)=filter_function(chandata,samplingrate,SR_factor_LFP,size(data.streams.LFPx.data,2),preprocessing_settings);
+        end
+
+        %% filter BB to MUA
+        if ~DISREGARDMUA
+        lp_cutoff = 100; % Hz
+        data.streams.MUAx.data(channel,:)=mua_estimate(chandata,samplingrate,lp_cutoff,SR_factor_MUA);
+        end
     end
     clear chandata
 elseif any(LFP_index)
@@ -469,6 +483,26 @@ for r=1:numel(unique_runs)          % looping through runs
                 TDT_trial(vt).LFPx_samplingrate=TDT_trial_temp(vt).LFPx_samplingrate;
             end
         end
+        if DISREGARDMUA && isfield(TDT_trial,'MUAx')
+            %% take over LFP from the file that was already saved if it's there and we disregarded LFP this time
+            for vt=Validtrials % really, a loop is needed for this?
+                TDT_trial_temp(vt).MUAx=TDT_trial(vt).MUAx;
+                TDT_trial_temp(vt).MUAx_samplingrate=TDT_trial(vt).MUAx_samplingrate;
+            end
+            if isfield(First_trial_INI,'MUAx') %% new bug?? Lin 20151119 probably because it didnt exist from before
+                First_trial_INI_temp.MUAx=First_trial_INI.MUAx;
+            end
+            
+        elseif isfield(TDT_trial_temp,'MUAx') && ~isfield(TDT_trial,'LFMUAxPx')
+            %% this is only here so that structures have the same fieldnames in the end; first trial does not matter here, we either keep it or overwrite it
+            for vt=Validtrials % really, a loop is needed for this?
+                TDT_trial(vt).MUAx=TDT_trial_temp(vt).MUAx;
+                TDT_trial(vt).MUAx_samplingrate=TDT_trial_temp(vt).MUAx_samplingrate;
+            end
+        end
+
+
+
         if DISREGARDSPIKES && isfield(TDT_trial,'eNeu_t')
             %% take over spikes from the file that was already saved if it's there and we disregarded spikes this time
             for vt=Validtrials % really, a loop is needed for this?
@@ -493,7 +527,17 @@ for r=1:numel(unique_runs)          % looping through runs
     for f=1:numel(pp_fns)
         preprocessing_settings.(pp_fns{f})=preprocessing_settings_temp.(pp_fns{f});
     end
-    save(filename,'TDT_trial','First_trial_INI','preprocessing_settings');
+    
+    S = whos('TDT_trial','First_trial_INI','preprocessing_settings'); % figure out variable bytes to put them into either -v4 or -v7.3 mat file
+    var_bytes = [S.bytes];
+    if any(var_bytes >= 2^31) % variables with >2^31 bytes won't fit into default -v4 mat-file version, use -v7.3
+        save(filename,'TDT_trial','First_trial_INI','preprocessing_settings', '-v7.3');
+    else
+        save(filename,'TDT_trial','First_trial_INI','preprocessing_settings');
+    end
+    
+    
+    
 end
 end
 
@@ -556,4 +600,86 @@ datafilt=  filtfilt(b,a, datafilt);
 % lowpass
 [b,a]=butter(4, preprocessing_settings.LFP.LP_bw_filter*2/samplingrate, 'low'); % 'low', 'high
 Output_stream=  single(filtfilt(b,a, datafilt));
+end
+
+function mua = mua_estimate(data, Fs,lp_cutoff,SR_factor)
+% Estimate MUA from broadband ephys signal
+% data: [channels x time]
+% Fs: original sampling frequency (Hz)
+% lp_cutoff: low-pass filter cutoff frequency (Hz, e.g., 100)
+% ds_rate: downsampled rate (Hz, e.g., 500)
+% mua: [channels x time_downsampled] (at ds_rate Hz)
+
+% from https://www.jneurosci.org/content/27/31/8387
+% Stark and Abeles (2007)
+
+% MUA was estimated by bandpass filtering (300–6000 Hz, three-pole Butterworth), 
+% clipping extreme values (larger or smaller than the mean ±2 SDs), 
+% and computing the sample-by-sample RMS 
+% (square, raising to the second power; mean, low-pass filtering at 100 Hz, down-sampling to 500 Hz; root, taking the square root)
+
+% Parse input arguments
+% Default values
+% 
+% Fs = 25000; % Hz
+% lp_cutoff = 100; % Hz
+% ds_rate = 500; % Hz
+% if nargin > 1
+%     Fs = varargin{1};
+% end
+% if nargin > 2
+%     lp_cutoff = varargin{2};
+% end
+% if nargin > 3
+%     ds_rate = varargin{3};
+% end
+
+% 1. Bandpass filter (300–6000 Hz, 3rd order Butterworth)
+[b, a] = butter(3, [300 6000]/(Fs/2), 'bandpass');
+try
+data_filt = filtfilt(b, a, double(data)')'; % filter along time
+catch eee
+eeee=1;
+end
+
+% 2. Clip extreme values (mean ±2 SDs, per channel)
+mu = mean(data_filt, 2);
+sigma = std(data_filt, 0, 2);
+clip_lo = mu - 2*sigma;
+clip_hi = mu + 2*sigma;
+data_clipped = min(max(data_filt, clip_lo), clip_hi);
+
+% 3. Compute sample-by-sample RMS:
+%    a. Square
+data_sq = data_clipped.^2;
+
+%    b. Mean (low-pass filter at lp_cutoff Hz)
+% Use MATLAB's lowpass command for zero-phase filtering
+% (requires Signal Processing Toolbox, MATLAB R2018a or newer)
+datafilt = lowpass(data_sq', lp_cutoff, Fs, 'ImpulseResponse', 'iir')';
+
+%    c. Downsample to ds_rate Hz
+% [p, q] = rat(ds_rate / Fs, 1e-6);
+% data_ds = resample(data_lp', p, q)';
+
+
+%datafilt=[datafilt(1:round(SR_factor/2)) datafilt(1:end-round(SR_factor/2))];
+N_samples_new=floor(numel(datafilt)/SR_factor);
+RR=N_samples_new*SR_factor-numel(datafilt);
+if RR<0
+    %remove last few samples so the total number divided by SR_factor is integer
+    datafilt(end+RR+1:end)=[];
+else
+    %duplicate last few samples so the total number divided by SR_factor is integer
+    datafilt(end+1:end+RR)=datafilt(end-RR+1:end);
+end
+
+%take nanmean of every ~5 samples
+data_ds=single(mean(reshape(datafilt,SR_factor,numel(datafilt)/SR_factor),1));
+data_ds(data_ds<0)=0;
+
+%    d. Root
+mua = sqrt(data_ds);
+
+
 end

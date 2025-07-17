@@ -1,5 +1,5 @@
 function phys_gui_working(varargin)
-% Last Modified by GUIDE v2.5 10-Feb-2021 14:39:37
+% Last Modified by GUIDE v2.5 01-Jul-2025 20:02:41
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -185,6 +185,7 @@ function checkbox8_CreateFcn(hObject, eventdata, handles)
 function checkbox9_CreateFcn(hObject, eventdata, handles)
 function checkbox91_CreateFcn(hObject, eventdata, handles)
 function checkbox92_CreateFcn(hObject, eventdata, handles)
+function checkbox93_CreateFcn(hObject, eventdata, handles)
 function checkbox10_CreateFcn(hObject, eventdata, handles)
 function checkbox101_CreateFcn(hObject, eventdata, handles)
 function checkbox102_CreateFcn(hObject, eventdata, handles)
@@ -230,8 +231,11 @@ update_notes('Keep LFP that is stored in the combined mat files',get(hObject,'Va
 function checkbox92_Callback(hObject, eventdata, handles)
 update_notes('Keep Spikes that are stored in the combined mat files ',get(hObject,'Value'),handles,11);
 
+function checkbox93_Callback(hObject, eventdata, handles)
+update_notes('Keep MUA that is stored in the combined mat files ',get(hObject,'Value'),handles,12);
+
 function checkbox10_Callback(hObject, eventdata, handles)
-update_notes('Update sorting table for selected sessions',get(hObject,'Value'),handles,12);
+update_notes('Update sorting table for selected sessions',get(hObject,'Value'),handles,13);
 
 function update_notes(string,addorremove,handles,n)
 current_string_o=get(handles.text22,'String');
@@ -423,3 +427,12 @@ function checkbox41_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox41
+
+
+% --- Executes on button press in checkbox93.
+function checkbox42_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox93 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox93
